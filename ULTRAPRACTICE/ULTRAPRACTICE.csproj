@@ -6,7 +6,6 @@
     <Product>ULTRAPRACTICE</Product>
     <GUID>Nacho.ULTRAPRACTICE</GUID>
     <Version>0.1.3</Version>
-    
     <LangVersion>13.0</LangVersion>
     <RootNamespace>ULTRAPRACTICE</RootNamespace>
     <UltrakillDir>DEFINED IN CSPROJ.USER</UltrakillDir> <!-- Ensure that this has BepInEx installed -->
@@ -18,6 +17,10 @@
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Content Include="ULTRAPRACTICE.csproj.user" />
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>

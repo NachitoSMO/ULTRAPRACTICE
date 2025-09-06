@@ -1,66 +1,61 @@
-﻿using HarmonyLib;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-namespace ULTRAPRACTICE.Classes
+namespace ULTRAPRACTICE.Classes;
+
+public static class LoadedRoomsVariables
 {
-    public static class LoadedRoomsVariables
+    public static List<GameObject> activeObjs = new();
+    public static List<GameObject> inactiveObjs = new();
+    public static GameObject savedWeapon;
+    public static bool doorOpened;
+
+    public static void SaveVariables()
     {
-        public static List<GameObject> activeObjs = new List<GameObject>();
-        public static List<GameObject> inactiveObjs = new List<GameObject>();
-        public static GameObject savedWeapon;
-        public static bool doorOpened;
+        activeObjs.Clear();
+        inactiveObjs.Clear();
 
-        public static void SaveVariables()
-        {
-            activeObjs.Clear();
-            inactiveObjs.Clear();
-
-            Door[] allObjs = GameObject.FindObjectsOfType<Door>(true);
+        Door[] allObjs = GameObject.FindObjectsOfType<Door>(true);
             
-            foreach (Door door in allObjs)
+        foreach (Door door in allObjs)
+        {
+            foreach (GameObject room in door.activatedRooms)
             {
-                foreach (GameObject room in door.activatedRooms)
-                {
-                    if (room.activeInHierarchy) activeObjs.Add(room);
-                    else inactiveObjs.Add(room);
-                }
+                if (room.activeInHierarchy) activeObjs.Add(room);
+                else inactiveObjs.Add(room);
             }
-
-            /// this doesnt work for the 4-2 skulls, for some reason
-            /*var scene = SceneManager.GetActiveScene();
-            var sceneRoots = scene.GetRootGameObjects();
-
-            foreach (var o in sceneRoots)
-            {
-                if (o.name.Equals("6A - Indoor Garden") || o.name.Equals("6B - Outdoor Arena"))
-                {
-                    if (o.activeSelf) activeObjs.Add(o);
-                    else inactiveObjs.Add(o);
-                }
-            }*/
-
-            doorOpened = MonoSingleton<OutdoorLightMaster>.Instance.firstDoorOpened;
-
         }
 
-        public static void SetVariables()
-        {
-            foreach (GameObject obj in activeObjs)
-            {
-                if (obj != null) obj.SetActive(true);
-            }
+        /// this doesnt work for the 4-2 skulls, for some reason
+        /*var scene = SceneManager.GetActiveScene();
+        var sceneRoots = scene.GetRootGameObjects();
 
-            /// check if the first door was opened or else every room will despawn
-            if (doorOpened)
+        foreach (var o in sceneRoots)
+        {
+            if (o.name.Equals("6A - Indoor Garden") || o.name.Equals("6B - Outdoor Arena"))
             {
-                foreach (GameObject obj in inactiveObjs)
-                {
-                    if (obj != null) obj.SetActive(false);
-                }
+                if (o.activeSelf) activeObjs.Add(o);
+                else inactiveObjs.Add(o);
+            }
+        }*/
+
+        doorOpened = MonoSingleton<OutdoorLightMaster>.Instance.firstDoorOpened;
+
+    }
+
+    public static void SetVariables()
+    {
+        foreach (GameObject obj in activeObjs)
+        {
+            if (obj != null) obj.SetActive(true);
+        }
+
+        /// check if the first door was opened or else every room will despawn
+        if (doorOpened)
+        {
+            foreach (GameObject obj in inactiveObjs)
+            {
+                if (obj != null) obj.SetActive(false);
             }
         }
     }
