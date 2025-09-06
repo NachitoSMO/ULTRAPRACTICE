@@ -20,14 +20,14 @@ public static class v2Variables
 
     public static void SaveVariables()
     {
-        V2[] allObjs = GameObject.FindObjectsOfType<V2>();
+        V2[] allObjs = Object.FindObjectsOfType<V2>();
         states = new properties[allObjs.Length];
 
         for (int i = 0; i < allObjs.Length; i++)
         {
             states[i].gameObject = allObjs[i];
 
-            states[i].backupObject = GameObject.Instantiate(allObjs[i].gameObject, allObjs[i].gameObject.transform.position, allObjs[i].gameObject.transform.rotation);
+            states[i].backupObject = Object.Instantiate(allObjs[i].gameObject, allObjs[i].gameObject.transform.position, allObjs[i].gameObject.transform.rotation);
             states[i].backupObject.SetActive(false);
             states[i].vel = allObjs[i].rb.velocity;
             states[i].kinematic = allObjs[i].rb.isKinematic;

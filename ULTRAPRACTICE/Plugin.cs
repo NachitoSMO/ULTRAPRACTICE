@@ -11,8 +11,7 @@ namespace ULTRAPRACTICE;
 [BepInDependency("Hydraxous.ULTRAKILL.Configgy", BepInDependency.DependencyFlags.HardDependency)]
 public sealed class Plugin : BaseUnityPlugin
 {
-    private ManualLogSource log => base.Logger;
-    internal new static ManualLogSource Logger => Instance.log;
+    internal new static ManualLogSource Logger { get; private set; }
 
     public static Plugin Instance { get; private set; }
 
@@ -28,11 +27,11 @@ public sealed class Plugin : BaseUnityPlugin
 
     private void Awake()
     {
-        gameObject.hideFlags = HideFlags.DontSaveInEditor;
+        Logger = base.Logger;
         Logger.LogInfo($"Mod {PLUGIN_NAME} version {PLUGIN_VERSION} is loading...");
 
         Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), PLUGIN_GUID);
-
+        gameObject.hideFlags = HideFlags.DontSaveInEditor;
         config = new ConfigBuilder(PLUGIN_GUID, PLUGIN_NAME);
         config.BuildAll();
 

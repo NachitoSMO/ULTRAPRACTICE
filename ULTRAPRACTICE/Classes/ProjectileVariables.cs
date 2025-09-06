@@ -19,17 +19,17 @@ public static class ProjectileVariables
         {
             for (int i = 0; i < states.Length; i++)
             {
-                UnityEngine.Object.Destroy(states[i].backupObject);
+                Object.Destroy(states[i].backupObject);
             }
         }
 
-        Projectile[] allObjs = GameObject.FindObjectsOfType<Projectile>();
+        Projectile[] allObjs = Object.FindObjectsOfType<Projectile>();
         states = new properties[allObjs.Length];
 
         for (int i = 0; i < allObjs.Length; i++)
         {
             states[i].gameObject = allObjs[i].gameObject;
-            states[i].backupObject = GameObject.Instantiate(allObjs[i], allObjs[i].gameObject.transform.position, allObjs[i].transform.rotation);
+            states[i].backupObject = Object.Instantiate(allObjs[i], allObjs[i].gameObject.transform.position, allObjs[i].transform.rotation);
             UpdateBehaviour.CopyScripts(allObjs[i].gameObject, states[i].backupObject.gameObject);
             states[i].backupObject.rb = states[i].backupObject.GetComponent<Rigidbody>();
             states[i].backupObject.rb.velocity = allObjs[i].rb.velocity;
@@ -40,7 +40,7 @@ public static class ProjectileVariables
 
     public static void SetVariables()
     {
-        Projectile[] projectiles = GameObject.FindObjectsOfType<Projectile>();
+        Projectile[] projectiles = Object.FindObjectsOfType<Projectile>();
         for (int i = 0; i < projectiles.Length; i++)
         {
             if (projectiles[i].gameObject.activeSelf) Object.Destroy(projectiles[i].gameObject);
@@ -48,7 +48,7 @@ public static class ProjectileVariables
 
         for (int i = 0; i < states.Length; i++)
         {
-            Projectile backupCopy = GameObject.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
+            Projectile backupCopy = Object.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
             UpdateBehaviour.CopyScripts(states[i].backupObject.gameObject, backupCopy.gameObject);
             states[i].gameObject = backupCopy.gameObject;
             backupCopy.rb = backupCopy.GetComponent<Rigidbody>();

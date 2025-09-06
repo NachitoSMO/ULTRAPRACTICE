@@ -15,7 +15,7 @@ public static class LoadedRoomsVariables
         activeObjs.Clear();
         inactiveObjs.Clear();
 
-        Door[] allObjs = GameObject.FindObjectsOfType<Door>(true);
+        Door[] allObjs = Object.FindObjectsOfType<Door>(true);
             
         foreach (Door door in allObjs)
         {

@@ -326,7 +326,7 @@ public static class playerVariables
         GameObject plyObj = ply.gameObject;
         Rigidbody rb = ply.rb;
 
-        if (savedVars != null) GameObject.Destroy(savedVars.gameObject);
+        if (savedVars != null) Object.Destroy(savedVars.gameObject);
 
         savedVars = new GameObject().AddComponent<NewMovementVars>();
 

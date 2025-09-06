@@ -90,7 +90,7 @@ public static class coinVariables
     public static void SaveVariables()
     {
 
-        Coin[] allObjs = GameObject.FindObjectsOfType<Coin>();
+        Coin[] allObjs = Object.FindObjectsOfType<Coin>();
         states = new properties[allObjs.Length];
 
         for (int i = 0; i < allObjs.Length; i++)
@@ -125,7 +125,7 @@ public static class coinVariables
 
     public static void SetVariables()
     {
-        Coin[] coins = GameObject.FindObjectsOfType<Coin>();
+        Coin[] coins = Object.FindObjectsOfType<Coin>();
         for (int i = 0; i < coins.Length; i++)
         {
             Object.Destroy(coins[i].gameObject);
@@ -134,7 +134,7 @@ public static class coinVariables
 
         for (int i = 0; i < states.Length; i++)
         {
-            GameObject backupCopy = GameObject.Instantiate(Plugin.Instance.coin, states[i].pos, states[i].rot);
+            GameObject backupCopy = Object.Instantiate(Plugin.Instance.coin, states[i].pos, states[i].rot);
             Coin component = backupCopy.GetComponentInChildren<Coin>();
             states[i].gameObject = backupCopy;
             SetVars(component, i);

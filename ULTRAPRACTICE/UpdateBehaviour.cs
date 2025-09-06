@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Configgy;
+using HarmonyLib;
 using ULTRAPRACTICE.Classes;
 using ULTRAPRACTICE.Patches;
 using UnityEngine;
@@ -118,7 +119,7 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             // this is technically wrong, it should instead save whatever the slomo attachments hasBeenDone value was when we save but due to the way slomos are used
             // in game i havent seen a difference
 
-            foreach (SlowMo slomo in GameObject.FindObjectsOfType<SlowMo>())
+            foreach (SlowMo slomo in FindObjectsOfType<SlowMo>())
             {
                 SlowMoAttachment attach = slomo.GetComponent<SlowMoAttachment>();
                 if (attach != null)
@@ -141,57 +142,59 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
     // copy paste of CheckPoint.ResetRoom() but only the bit I care about
     public static void PseudoResetRoom()
     {
-        Vector3 position = Plugin.Instance.atCheckpoint.newRooms[Plugin.Instance.atCheckpoint.i].transform.position;
-        Plugin.Instance.atCheckpoint.newRooms[Plugin.Instance.atCheckpoint.i].SetActive(value: false);
-        UnityEngine.Object.Destroy(Plugin.Instance.atCheckpoint.newRooms[Plugin.Instance.atCheckpoint.i]);
-        Plugin.Instance.atCheckpoint.newRooms[Plugin.Instance.atCheckpoint.i] = UnityEngine.Object.Instantiate(Plugin.Instance.atCheckpoint.defaultRooms[Plugin.Instance.atCheckpoint.i], position, Plugin.Instance.atCheckpoint.defaultRooms[Plugin.Instance.atCheckpoint.i].transform.rotation, Plugin.Instance.atCheckpoint.defaultRooms[Plugin.Instance.atCheckpoint.i].transform.parent);
-        Plugin.Instance.atCheckpoint.newRooms[Plugin.Instance.atCheckpoint.i].SetActive(value: true);
-        Bonus[] componentsInChildren = Plugin.Instance.atCheckpoint.newRooms[Plugin.Instance.atCheckpoint.i].GetComponentsInChildren<Bonus>(includeInactive: true);
-        if (componentsInChildren != null && componentsInChildren.Length != 0)
+        var checkpoint = Plugin.Instance.atCheckpoint;
+        for (; checkpoint.i < checkpoint.defaultRooms.Count - 1; checkpoint.i++)
         {
-            Bonus[] array = componentsInChildren;
-            for (int i = 0; i < array.Length; i++)
+            checkpoint = Plugin.Instance.atCheckpoint;
+            var newRoom = checkpoint.newRooms[checkpoint.i];
+            var position = newRoom.transform.position;
+
+            newRoom.SetActive(value: false);
+            Destroy(newRoom);
+            var defaultRoom = checkpoint.defaultRooms[checkpoint.i];
+            checkpoint.newRooms[checkpoint.i] = newRoom = Instantiate(defaultRoom, position, defaultRoom.transform.rotation, defaultRoom.transform.parent);
+            newRoom.SetActive(value: true);
+            var bonusesAtCheckpoint = newRoom.GetComponentsInChildren<Bonus>(includeInactive: true);
+
+            if (bonusesAtCheckpoint != null && bonusesAtCheckpoint.Length != 0)
             {
-                array[i].UpdateStatsManagerReference();
+                foreach (var bonus in bonusesAtCheckpoint)
+                {
+                    bonus.UpdateStatsManagerReference();
+                }
             }
-        }
-        if (Plugin.Instance.atCheckpoint.i + 1 < Plugin.Instance.atCheckpoint.defaultRooms.Count)
-        {
-            Plugin.Instance.atCheckpoint.i++;
-            PseudoResetRoom();
-            return;
+
+            if (checkpoint.i >= checkpoint.defaultRooms.Count - 1) break;
         }
     }
 
     //uses 2 gameObjects and puts all of their components through CopyValues()
     public static void CopyScripts(GameObject source, GameObject target)
     {
-        MonoBehaviour[] components = source.GetComponents<MonoBehaviour>();
-        foreach (MonoBehaviour monoBehaviour in components)
+        var sourceBehaviours = source.GetComponents<MonoBehaviour>();
+        foreach (var behaviour in sourceBehaviours)
         {
-            UnityEngine.Component component = target.GetComponent(monoBehaviour.GetType());
-            if (component != null)
-            {
-                CopyValues(component, monoBehaviour);
-            }
+            var targetBehaviour = target.GetComponent<MonoBehaviour>();
+            if (targetBehaviour)
+                CopyValues(targetBehaviour, behaviour);
         }
     }
 
-    //the hell function 
+    //the hell function
     public static void CopyValues(object target, object source)
     {
         if (target == null || source == null)
             return;
 
-        FieldInfo[] fields = source.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        var fields = source.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-        foreach (FieldInfo field in fields)
+        foreach (var field in fields)
         {
             // we skip rigidbody's as assigning those during runtime doesn't work as we might expect
             if (typeof(Rigidbody).IsAssignableFrom(field.FieldType))
                 continue;
 
-            FieldInfo targetField = target.GetType().GetField(field.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var targetField = target.GetType().GetField(field.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
             if (targetField != null && targetField.FieldType == field.FieldType)
             {

@@ -19,17 +19,17 @@ public static class CannonBallVariables
         {
             for (int i = 0; i < states.Length; i++)
             {
-                UnityEngine.Object.Destroy(states[i].backupObject);
+                Object.Destroy(states[i].backupObject);
             }
         }
 
-        Cannonball[] allObjs = GameObject.FindObjectsOfType<Cannonball>();
+        Cannonball[] allObjs = Object.FindObjectsOfType<Cannonball>();
         states = new properties[allObjs.Length];
 
         for (int i = 0; i < allObjs.Length; i++)
         {
             states[i].gameObject = allObjs[i].gameObject;
-            states[i].backupObject = GameObject.Instantiate(allObjs[i], allObjs[i].gameObject.transform.position, allObjs[i].transform.rotation);
+            states[i].backupObject = Object.Instantiate(allObjs[i], allObjs[i].gameObject.transform.position, allObjs[i].transform.rotation);
 
             UpdateBehaviour.CopyScripts(allObjs[i].gameObject, states[i].backupObject.gameObject);
 
@@ -42,15 +42,15 @@ public static class CannonBallVariables
 
     public static void SetVariables()
     {
-        Cannonball[] projectiles = GameObject.FindObjectsOfType<Cannonball>();
+        Cannonball[] projectiles = Object.FindObjectsOfType<Cannonball>();
         for (int i = 0; i < projectiles.Length; i++)
         {
-            if (projectiles[i].gameObject.activeSelf) GameObject.Destroy(projectiles[i].gameObject);
+            if (projectiles[i].gameObject.activeSelf) Object.Destroy(projectiles[i].gameObject);
         }
 
         for (int i = 0; i < states.Length; i++)
         {
-            Cannonball backupCopy = GameObject.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
+            Cannonball backupCopy = Object.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
             UpdateBehaviour.CopyScripts(states[i].backupObject.gameObject, backupCopy.gameObject);
             states[i].gameObject = backupCopy.gameObject;
             backupCopy.rb = backupCopy.GetComponent<Rigidbody>();
