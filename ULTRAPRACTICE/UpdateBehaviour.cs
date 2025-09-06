@@ -111,7 +111,7 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         {
             // hacky workaround that makes it so if we saved at a point before v2 existed it just resets the room the same way CheckPoints do it so that
             // we can practice 1-4 properly
-            if (Plugin.Instance.atCheckpoint != null && FindObjectOfType<V2>(true) != null)
+            if (Plugin.Instance.atCheckpoint != null && FindObjectOfType<V2>() != null)
             {
                 PseudoResetRoom();
             }
@@ -139,32 +139,31 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         }
     }
 
-    // copy paste of CheckPoint.ResetRoom() but only the bit I care about
+    // copy paste of CheckPoint.ResetRoom() but only the bit I care about (running the actual function makes it so your weapon "refreshes")
     public static void PseudoResetRoom()
     {
-        var checkpoint = Plugin.Instance.atCheckpoint;
-        for (; checkpoint.i < checkpoint.defaultRooms.Count - 1; checkpoint.i++)
+        var checkp = Plugin.Instance.atCheckpoint;
+        var defaultRoom = checkp.defaultRooms[checkp.i];
+
+        Vector3 position = checkp.newRooms[checkp.i].transform.position;
+        checkp.newRooms[checkp.i].SetActive(value: false);
+        Object.Destroy(checkp.newRooms[checkp.i]);
+        checkp.newRooms[checkp.i] = Object.Instantiate(defaultRoom, position, defaultRoom.transform.rotation, defaultRoom.transform.parent);
+        checkp.newRooms[checkp.i].SetActive(value: true);
+        Bonus[] componentsInChildren = checkp.newRooms[checkp.i].GetComponentsInChildren<Bonus>(includeInactive: true);
+        if (componentsInChildren != null && componentsInChildren.Length != 0)
         {
-            checkpoint = Plugin.Instance.atCheckpoint;
-            var newRoom = checkpoint.newRooms[checkpoint.i];
-            var position = newRoom.transform.position;
-
-            newRoom.SetActive(value: false);
-            Destroy(newRoom);
-            var defaultRoom = checkpoint.defaultRooms[checkpoint.i];
-            checkpoint.newRooms[checkpoint.i] = newRoom = Instantiate(defaultRoom, position, defaultRoom.transform.rotation, defaultRoom.transform.parent);
-            newRoom.SetActive(value: true);
-            var bonusesAtCheckpoint = newRoom.GetComponentsInChildren<Bonus>(includeInactive: true);
-
-            if (bonusesAtCheckpoint != null && bonusesAtCheckpoint.Length != 0)
+            Bonus[] array = componentsInChildren;
+            for (int i = 0; i < array.Length; i++)
             {
-                foreach (var bonus in bonusesAtCheckpoint)
-                {
-                    bonus.UpdateStatsManagerReference();
-                }
+                array[i].UpdateStatsManagerReference();
             }
-
-            if (checkpoint.i >= checkpoint.defaultRooms.Count - 1) break;
+        }
+        if (checkp.i + 1 < checkp.defaultRooms.Count)
+        {
+            checkp.i++;
+            PseudoResetRoom();
+            return;
         }
     }
 

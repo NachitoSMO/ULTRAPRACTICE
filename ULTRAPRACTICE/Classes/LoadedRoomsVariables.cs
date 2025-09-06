@@ -21,6 +21,7 @@ public static class LoadedRoomsVariables
         {
             foreach (GameObject room in door.activatedRooms)
             {
+                if (room == null) continue;
                 if (room.activeInHierarchy) activeObjs.Add(room);
                 else inactiveObjs.Add(room);
             }
@@ -39,7 +40,8 @@ public static class LoadedRoomsVariables
             }
         }*/
 
-        doorOpened = MonoSingleton<OutdoorLightMaster>.Instance.firstDoorOpened;
+        if (MonoSingleton<OutdoorLightMaster>.Instance != null)
+            doorOpened = MonoSingleton<OutdoorLightMaster>.Instance.firstDoorOpened;
 
     }
 

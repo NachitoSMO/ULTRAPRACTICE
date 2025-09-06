@@ -60,5 +60,5 @@ public sealed class ObjActVars : MonoBehaviour
         }
     }
 
-    public string nme;
+    public ObjectActivator activator;
 }
