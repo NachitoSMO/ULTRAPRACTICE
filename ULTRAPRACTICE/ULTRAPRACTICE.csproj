@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>ULTRAPRACTICE</AssemblyName>
     <Product>ULTRAPRACTICE</Product>
     <GUID>Nacho.ULTRAPRACTICE</GUID>
     <Version>0.1.3</Version>
-    <Nullable>enable</Nullable>
+    
     <LangVersion>13.0</LangVersion>
     <RootNamespace>ULTRAPRACTICE</RootNamespace>
     <UltrakillDir>DEFINED IN CSPROJ.USER</UltrakillDir> <!-- Ensure that this has BepInEx installed -->
@@ -17,7 +18,6 @@
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
-  <Import Project="ULTRAPRACTICE.csproj.user" Condition="Exists('ULTRAPRACTICE.csproj.user')" />
   
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
@@ -45,8 +45,5 @@
       <HintPath>lib\Configgy.dll</HintPath>
     </Reference>
   </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="ULTRAPRACTICE.csproj.user" />
-  </ItemGroup>
+  
 </Project>
