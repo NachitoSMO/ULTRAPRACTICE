@@ -26,22 +26,22 @@
   
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
-    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.5.0-beta.1">
+    <PackageReference Include="BepInEx.Core" Version="5.*"/>
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="BepInEx.Core" Version="5.*"/>
     <PackageReference Include="UltraModding.PluginInfoGenerator" Version="4.*"/>
     <PackageReference Include="UnityEngine.Modules" Version="2022.3.29" IncludeAssets="compile"/>
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Assembly-CSharp" Publicize="true">
+    <Reference Include="Assembly-CSharp">
       <HintPath>$(UltrakillDir)ULTRAKILL_Data/Managed/Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
       <CopyLocal>false</CopyLocal>
     </Reference>
-    <Reference Include="UnityEngine.UI" Publicize="true">
+    <Reference Include="UnityEngine.UI">
       <HintPath>$(UltrakillDir)ULTRAKILL_Data/Managed/UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
       <CopyLocal>false</CopyLocal>
@@ -49,6 +49,10 @@
     <Reference Include="Configgy">
       <HintPath>lib\Configgy.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Publicize Include="Assembly-CSharp" />
   </ItemGroup>
   
 </Project>
