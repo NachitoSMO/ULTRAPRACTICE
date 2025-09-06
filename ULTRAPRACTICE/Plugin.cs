@@ -25,11 +25,11 @@ public sealed class Plugin : BaseUnityPlugin
     public bool jumped;
 
     public CheckPoint atCheckpoint;
-    
+
     private void Awake()
     {
         gameObject.hideFlags = HideFlags.DontSaveInEditor;
-        Debug.Log($"Mod {PLUGIN_NAME} version {PLUGIN_VERSION} is loading...");
+        Logger.LogInfo($"Mod {PLUGIN_NAME} version {PLUGIN_VERSION} is loading...");
 
         Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), PLUGIN_GUID);
 
@@ -42,7 +42,7 @@ public sealed class Plugin : BaseUnityPlugin
         DontDestroyOnLoad(obj);
         obj.AddComponent<UpdateBehaviour>();
 
-        Debug.Log($"Mod {PLUGIN_NAME} version {PLUGIN_VERSION} is loaded!");
+        Logger.LogInfo($"Mod {PLUGIN_NAME} version {PLUGIN_VERSION} is loaded!");
     }
 
 }
