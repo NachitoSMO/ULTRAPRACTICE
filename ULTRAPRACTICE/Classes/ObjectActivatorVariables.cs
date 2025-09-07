@@ -32,7 +32,7 @@ internal class ObjectActivatorVariables
 
         foreach (var activator in oav)
         {
-            if (activator.activator.activated && !activator.activated) activator.activator.events.Revert();
+            if (activator.activator.activated && !activator.activated && activator.activator.events != null) activator.activator.events.Revert();
         }
     }
 }

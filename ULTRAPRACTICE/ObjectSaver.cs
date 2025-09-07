@@ -18,8 +18,7 @@ public class ObjectSaver<T>(T @object)
         if (!reference.TryGetTarget(out var obj)) return;
         var fields = AccessTools.GetDeclaredFields(typeof(T))
                                 .Where(f => predicate == null || predicate(f));
-        foreach (var field in fields
-                    )
+        foreach (var field in fields)
         {
             savedValues[field.Name] = field.GetValue(obj);
         }

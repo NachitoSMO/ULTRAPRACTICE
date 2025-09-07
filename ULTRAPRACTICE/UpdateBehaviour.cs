@@ -1,9 +1,10 @@
-﻿using System.Reflection;
-using Configgy;
+﻿using Configgy;
 using HarmonyLib;
+using System.Reflection;
 using ULTRAPRACTICE.Classes;
 using ULTRAPRACTICE.Patches;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ULTRAPRACTICE;
 
@@ -15,6 +16,12 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
     [Configgable] // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private static ConfigKeybind load = new(KeyCode.F2);
+
+    private static bool hasSaved = false;
+    void OnLevelWasLoaded(int level)
+    {
+        hasSaved = false;
+    }
 
     private void Update()
     {
@@ -105,37 +112,41 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
             if (MonoSingleton<StatsManager>.Instance.currentCheckPoint != null && v2Variables.states.Length == 0) Plugin.Instance.atCheckpoint = MonoSingleton<StatsManager>.Instance.currentCheckPoint;
             else Plugin.Instance.atCheckpoint = null;
+
+            hasSaved = true;
         }
 
-        if (load.WasPeformed())
+        if (hasSaved)
         {
-            // hacky workaround that makes it so if we saved at a point before v2 existed it just resets the room the same way CheckPoints do it so that
-            // we can practice 1-4 properly
-            if (Plugin.Instance.atCheckpoint != null && FindObjectOfType<V2>() != null)
+            if (load.WasPeformed())
             {
-                PseudoResetRoom();
+                // hacky workaround that makes it so if we saved at a point before v2 existed it just resets the room the same way CheckPoints do it so that
+                // we can practice 1-4 properly
+                if (Plugin.Instance.atCheckpoint != null && FindObjectOfType<V2>() != null)
+                {
+                    PseudoResetRoom();
+                }
+
+                // this is technically wrong, it should instead save whatever the slomo attachments hasBeenDone value was when we save but due to the way slomos are used
+                // in game i havent seen a difference
+
+                foreach (SlowMo slomo in FindObjectsOfType<SlowMo>())
+                {
+                    SlowMoAttachment attach = slomo.GetComponent<SlowMoAttachment>();
+                    if (attach != null)
+                        attach.hasBeenDone = false;
+                }
+
+                grenadeVariables.SetVariables();
+                ProjectileVariables.SetVariables();
+                coinVariables.SetVariables();
+                v2Variables.SetVariables();
+                playerVariables.SetVariables(Plugin.Instance.player);
+                WeaponChargeVariables.SetVariables();
+                CannonBallVariables.SetVariables();
+                ObjectActivatorVariables.SetVariables();
+                LoadedRoomsVariables.SetVariables();
             }
-
-            // this is technically wrong, it should instead save whatever the slomo attachments hasBeenDone value was when we save but due to the way slomos are used
-            // in game i havent seen a difference
-
-            foreach (SlowMo slomo in FindObjectsOfType<SlowMo>())
-            {
-                SlowMoAttachment attach = slomo.GetComponent<SlowMoAttachment>();
-                if (attach != null)
-                    attach.hasBeenDone = false;
-            }
-
-            LoadedRoomsVariables.SetVariables();
-
-            grenadeVariables.SetVariables();
-            ProjectileVariables.SetVariables();
-            coinVariables.SetVariables();
-            v2Variables.SetVariables();
-            playerVariables.SetVariables(Plugin.Instance.player);
-            WeaponChargeVariables.SetVariables();
-            CannonBallVariables.SetVariables();
-            ObjectActivatorVariables.SetVariables();
         }
     }
 

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-
 namespace ULTRAPRACTICE.Classes;
 
 public static class LoadedRoomsVariables
@@ -26,19 +25,6 @@ public static class LoadedRoomsVariables
                 else inactiveObjs.Add(room);
             }
         }
-
-        /// this doesnt work for the 4-2 skulls, for some reason
-        /*var scene = SceneManager.GetActiveScene();
-        var sceneRoots = scene.GetRootGameObjects();
-
-        foreach (var o in sceneRoots)
-        {
-            if (o.name.Equals("6A - Indoor Garden") || o.name.Equals("6B - Outdoor Arena"))
-            {
-                if (o.activeSelf) activeObjs.Add(o);
-                else inactiveObjs.Add(o);
-            }
-        }*/
 
         if (MonoSingleton<OutdoorLightMaster>.Instance != null)
             doorOpened = MonoSingleton<OutdoorLightMaster>.Instance.firstDoorOpened;
