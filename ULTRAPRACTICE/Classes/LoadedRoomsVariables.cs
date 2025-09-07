@@ -1,50 +1,44 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 namespace ULTRAPRACTICE.Classes;
 
-public static class LoadedRoomsVariables
+public sealed class LoadedRoomsVariables : IVariableSaver
 {
-    public static List<GameObject> activeObjs = new();
-    public static List<GameObject> inactiveObjs = new();
+    public static List<GameObject> ActiveObjs { get; } = [];
+    public static List<GameObject> InactiveObjs { get; } = [];
     public static GameObject savedWeapon;
     public static bool doorOpened;
 
-    public static void SaveVariables()
+    public void SaveVariables()
     {
-        activeObjs.Clear();
-        inactiveObjs.Clear();
+        ActiveObjs.Clear();
+        InactiveObjs.Clear();
 
-        Door[] allObjs = Object.FindObjectsOfType<Door>(true);
-            
-        foreach (Door door in allObjs)
-        {
-            foreach (GameObject room in door.activatedRooms)
-            {
-                if (room == null) continue;
-                if (room.activeInHierarchy) activeObjs.Add(room);
-                else inactiveObjs.Add(room);
-            }
-        }
+        var allObjs = Object.FindObjectsOfType<Door>(true);
 
-        if (MonoSingleton<OutdoorLightMaster>.Instance != null)
+        foreach (var room in allObjs
+                    .SelectMany(door => door.activatedRooms
+                                            .Where(room => room)))
+            (room.activeInHierarchy
+                 ? ActiveObjs
+                 : InactiveObjs).Add(room);
+
+        if (MonoSingleton<OutdoorLightMaster>.Instance)
             doorOpened = MonoSingleton<OutdoorLightMaster>.Instance.firstDoorOpened;
-
     }
 
-    public static void SetVariables()
+    public void SetVariables()
     {
-        foreach (GameObject obj in activeObjs)
-        {
-            if (obj != null) obj.SetActive(true);
-        }
+        foreach (var obj in ActiveObjs
+                    .Where(obj => obj))
+            obj.SetActive(true);
 
-        /// check if the first door was opened or else every room will despawn
-        if (doorOpened)
-        {
-            foreach (GameObject obj in inactiveObjs)
-            {
-                if (obj != null) obj.SetActive(false);
-            }
-        }
+        // check if the first door was opened or else every room will despawn
+        if (!doorOpened) return;
+        foreach (var obj in InactiveObjs
+                            .Where(obj => obj))
+            obj.SetActive(false);
     }
 }

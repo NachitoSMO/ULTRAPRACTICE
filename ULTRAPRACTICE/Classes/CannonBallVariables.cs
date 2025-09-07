@@ -1,8 +1,9 @@
-﻿using UnityEngine;
+﻿using ULTRAPRACTICE.Interfaces;
+using UnityEngine;
 
 namespace ULTRAPRACTICE.Classes;
 
-public static class CannonBallVariables
+public sealed class CannonBallVariables : IVariableSaver
 {
     public struct properties
     {
@@ -13,7 +14,7 @@ public static class CannonBallVariables
 
     public static properties[] states;
 
-    public static void SaveVariables()
+    public void SaveVariables()
     {
         if (states != null)
         {
@@ -40,7 +41,7 @@ public static class CannonBallVariables
         }
     }
 
-    public static void SetVariables()
+    public void SetVariables()
     {
         Cannonball[] projectiles = Object.FindObjectsOfType<Cannonball>();
         for (int i = 0; i < projectiles.Length; i++)

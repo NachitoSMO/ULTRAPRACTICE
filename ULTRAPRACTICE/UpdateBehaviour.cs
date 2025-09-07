@@ -2,6 +2,7 @@
 using Configgy;
 using System.Reflection;
 using ULTRAPRACTICE.Classes;
+using ULTRAPRACTICE.Interfaces;
 using ULTRAPRACTICE.Patches;
 using UnityEngine;
 
@@ -17,7 +18,20 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
     private static ConfigKeybind load = new(KeyCode.F2);
 
     private static bool hasSaved = false;
-    void OnLevelWasLoaded(int level)
+    private static readonly IVariableSaver[] savers =
+    [
+        new GrenadeVariables(),
+        new CoinVariables(),
+        new ProjectileVariables(),
+        new V2Variables(),
+        new PlayerVariables(),
+        new WeaponChargeVariables(),
+        new CannonBallVariables(),
+        new ObjectActivatorVariables(),
+        new LoadedRoomsVariables()
+    ];
+
+    private void OnLevelWasLoaded(int level)
     {
         hasSaved = false;
     }
@@ -38,22 +52,22 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
         if (player.IsInvoking(nameof(NewMovement.NotJumping)))
         {
-            playerVariables.timeUntilNotJumping += Time.deltaTime;
+            PlayerVariables.timeUntilNotJumping += Time.deltaTime;
             Plugin.Instance.jumped = true;
         }
 
         if (player.IsInvoking(nameof(NewMovement.JumpReady)))
         {
-            playerVariables.timeUntilJumpReady += Time.deltaTime;
+            PlayerVariables.timeUntilJumpReady += Time.deltaTime;
             Plugin.Instance.jumped = true;
         }
 
         if (!player.jumping && Plugin.Instance.jumped)
         {
-            playerVariables.timeUntilNotJumpingMax = playerVariables.timeUntilNotJumping;
-            playerVariables.timeUntilJumpReadyMax = playerVariables.timeUntilJumpReady;
-            playerVariables.timeUntilNotJumping = 0;
-            playerVariables.timeUntilJumpReady = 0;
+            PlayerVariables.timeUntilNotJumpingMax = PlayerVariables.timeUntilNotJumping;
+            PlayerVariables.timeUntilJumpReadyMax = PlayerVariables.timeUntilJumpReady;
+            PlayerVariables.timeUntilNotJumping = 0;
+            PlayerVariables.timeUntilJumpReady = 0;
             Plugin.Instance.jumped = false;
         }
 
@@ -94,17 +108,10 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         if (save.WasPeformed())
         {
             // TODO: perhaps refactor each method to be non-static and implement IVariableSaver or something
-            grenadeVariables.SaveVariables();
-            CoinVariables.SaveVariables();
-            ProjectileVariables.SaveVariables();
-            v2Variables.SaveVariables();
-            playerVariables.SaveVariables(Plugin.Instance.player);
-            WeaponChargeVariables.SaveVariables();
-            CannonBallVariables.SaveVariables();
-            ObjectActivatorVariables.SaveVariables();
-            LoadedRoomsVariables.SaveVariables();
+            foreach (var saver in savers)
+                saver.SaveVariables();
 
-            if (MonoSingleton<StatsManager>.Instance.currentCheckPoint != null && v2Variables.states.Length == 0)
+            if (MonoSingleton<StatsManager>.Instance.currentCheckPoint != null && V2Variables.states.Length == 0)
                 Plugin.Instance.atCheckpoint = MonoSingleton<StatsManager>.Instance.currentCheckPoint;
             else Plugin.Instance.atCheckpoint = null;
 
@@ -112,31 +119,24 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         }
 
         if (!hasSaved || !load.WasPeformed()) return;
-        // hacky workaround that makes it so if we saved at a point before v2 existed it just resets the room the same way CheckPoints do it so that
+        // Hacky workaround that makes it so if we saved at a point before v2 existed,
+        // it just resets the room the same way CheckPoints do it so that
         // we can practice 1-4 properly
         if (Plugin.Instance.atCheckpoint && FindObjectOfType<V2>())
             PseudoResetRoom();
 
-        // this is technically wrong, it should instead save whatever the slomo attachments
+        // This is technically wrong, it should instead save whatever the slomo attachments
         // hasBeenDone value was when we save but due to the way slomos are used
-        // in game i havent seen a difference
+        // in game I haven't seen a difference
         foreach (var attach in FindObjectsOfType<SlowMo>()
                               .Select(slomo => slomo.GetComponent<SlowMoAttachment>())
                               .Where(attach => attach != null))
             attach.hasBeenDone = false;
-
-        grenadeVariables.SetVariables();
-        ProjectileVariables.SetVariables();
-        CoinVariables.SetVariables();
-        v2Variables.SetVariables();
-        playerVariables.SetVariables(Plugin.Instance.player);
-        WeaponChargeVariables.SetVariables();
-        CannonBallVariables.SetVariables();
-        ObjectActivatorVariables.SetVariables();
-        LoadedRoomsVariables.SetVariables();
+        foreach (var saver in savers)
+            saver.SetVariables();
     }
 
-    // copy paste of CheckPoint.ResetRoom() but only the bit I care about (running the actual function makes it so your weapon "refreshes")
+    // copy and paste of CheckPoint.ResetRoom() but only the bit I care about (running the actual function makes it so your weapon "refreshes")
     public static void PseudoResetRoom()
     {
         var checkP = Plugin.Instance.atCheckpoint;

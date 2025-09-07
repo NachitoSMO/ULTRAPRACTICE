@@ -1,9 +1,10 @@
 ﻿using System.Collections;
+using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
 namespace ULTRAPRACTICE.Classes;
 
-public static class v2Variables
+public sealed class V2Variables : IVariableSaver
 {
     public struct properties
     {
@@ -18,7 +19,7 @@ public static class v2Variables
 
     public static properties[] states;
 
-    public static void SaveVariables()
+    public void SaveVariables()
     {
         V2[] allObjs = Object.FindObjectsOfType<V2>();
         states = new properties[allObjs.Length];
@@ -37,7 +38,7 @@ public static class v2Variables
         }
     }
 
-    public static void SetVariables()
+    public void SetVariables()
     {
         for (int i = 0; i < states.Length; i++)
         {

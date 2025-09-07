@@ -1,13 +1,14 @@
 ﻿using System.Linq;
+using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
 namespace ULTRAPRACTICE.Classes;
 
-internal static class ObjectActivatorVariables
+internal sealed class ObjectActivatorVariables : IVariableSaver
 {
     public static ObjActVars[] objActVars;
 
-    public static void SaveVariables()
+    public void SaveVariables()
     {
         foreach (var objActVar in objActVars ?? [])
             Object.Destroy(objActVar);
@@ -23,7 +24,7 @@ internal static class ObjectActivatorVariables
         }
     }
 
-    public static void SetVariables()
+    public void SetVariables()
     {
         foreach (var activator in objActVars.Where(activator => activator.activator.activated)
                                             .Where(activator => !activator.activated))

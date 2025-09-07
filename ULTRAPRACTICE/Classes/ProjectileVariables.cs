@@ -1,8 +1,9 @@
-﻿using UnityEngine;
+﻿using ULTRAPRACTICE.Interfaces;
+using UnityEngine;
 
 namespace ULTRAPRACTICE.Classes;
 
-public static class ProjectileVariables
+public class ProjectileVariables : IVariableSaver
 {
     public struct properties
     {
@@ -13,7 +14,7 @@ public static class ProjectileVariables
 
     public static properties[] states;
 
-    public static void SaveVariables()
+    public void SaveVariables()
     {
         if (states != null)
         {
@@ -38,7 +39,7 @@ public static class ProjectileVariables
         }
     }
 
-    public static void SetVariables()
+    public void SetVariables()
     {
         Projectile[] projectiles = Object.FindObjectsOfType<Projectile>();
         for (int i = 0; i < projectiles.Length; i++)

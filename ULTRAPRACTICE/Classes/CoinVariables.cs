@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ULTRAPRACTICE.Classes;
 
-public static class CoinVariables
+public sealed class CoinVariables : IVariableSaver
 {
     public sealed class CoinProps : ITypeProperties<Coin>
     {
@@ -114,7 +114,7 @@ public static class CoinVariables
 
     public static CoinProps[] states;
 
-    public static void SaveVariables()
+    public void SaveVariables()
     {
         var coins = Object.FindObjectsOfType<Coin>();
         states = coins
@@ -127,7 +127,7 @@ public static class CoinVariables
                 .ToArray();
     }
 
-    public static void SetVariables()
+    public void SetVariables()
     {
         var coins = Object.FindObjectsOfType<Coin>();
         foreach (var coin in coins)
