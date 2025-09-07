@@ -1,10 +1,9 @@
-﻿using Configgy;
-using HarmonyLib;
+﻿using System.Linq;
+using Configgy;
 using System.Reflection;
 using ULTRAPRACTICE.Classes;
 using ULTRAPRACTICE.Patches;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace ULTRAPRACTICE;
 
@@ -25,57 +24,64 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
     private void Update()
     {
-        if (Plugin.Instance.player == null && MonoSingleton<NewMovement>.Instance != null)
-            Plugin.Instance.player = MonoSingleton<NewMovement>.Instance;
-
-        if (Plugin.Instance.player != null)
+        var player = Plugin.Instance.player;
+        if (!player)
         {
-            if (Plugin.Instance.player.IsInvoking(nameof(NewMovement.NotJumping)))
+            if (MonoSingleton<NewMovement>.Instance != null)
+                Plugin.Instance.player = player = MonoSingleton<NewMovement>.Instance;
+            else
             {
-                playerVariables.timeUntilNotJumping += Time.deltaTime;
-                Plugin.Instance.jumped = true;
+                ManageInputs();
+                return;
             }
+        }
 
-            if (Plugin.Instance.player.IsInvoking(nameof(NewMovement.JumpReady)))
-            {
-                playerVariables.timeUntilJumpReady += Time.deltaTime;
-                Plugin.Instance.jumped = true;
-            }
+        if (player.IsInvoking(nameof(NewMovement.NotJumping)))
+        {
+            playerVariables.timeUntilNotJumping += Time.deltaTime;
+            Plugin.Instance.jumped = true;
+        }
 
-            if (!Plugin.Instance.player.jumping && Plugin.Instance.jumped)
-            {
-                playerVariables.timeUntilNotJumpingMax = playerVariables.timeUntilNotJumping;
-                playerVariables.timeUntilJumpReadyMax = playerVariables.timeUntilJumpReady;
-                playerVariables.timeUntilNotJumping = 0;
-                playerVariables.timeUntilJumpReady = 0;
-                Plugin.Instance.jumped = false;
-            }
+        if (player.IsInvoking(nameof(NewMovement.JumpReady)))
+        {
+            playerVariables.timeUntilJumpReady += Time.deltaTime;
+            Plugin.Instance.jumped = true;
+        }
 
-            if (MonoSingleton<CoinList>.Instance.revolverCoinsList.Count != 0)
-            {
-                if (Plugin.Instance.coin == null)
-                    Plugin.Instance.coin = FindObjectOfType<Revolver>().coin;
-                foreach (var coin in MonoSingleton<CoinList>.Instance.revolverCoinsList)
-                {
-                    if (coin.GetComponent<CoinTimers>() == null) 
-                        coin.gameObject.AddComponent<CoinTimers>();
+        if (!player.jumping && Plugin.Instance.jumped)
+        {
+            playerVariables.timeUntilNotJumpingMax = playerVariables.timeUntilNotJumping;
+            playerVariables.timeUntilJumpReadyMax = playerVariables.timeUntilJumpReady;
+            playerVariables.timeUntilNotJumping = 0;
+            playerVariables.timeUntilJumpReady = 0;
+            Plugin.Instance.jumped = false;
+        }
 
-                    if (coin.IsInvoking(nameof(Coin.GetDeleted)))
-                        coin.GetComponent<CoinTimers>().deleteTimer += Time.deltaTime;
+        if (MonoSingleton<CoinList>.Instance.revolverCoinsList.Count == 0)
+        {
+            ManageInputs();
+            return;
+        }
 
-                    if (coin.IsInvoking(nameof(Coin.StartCheckingSpeed))) 
-                        coin.GetComponent<CoinTimers>().checkSpeedTimer += Time.deltaTime;
+        if (Plugin.Instance.coin == null)
+            Plugin.Instance.coin = FindObjectOfType<Revolver>().coin;
+        foreach (var coin in MonoSingleton<CoinList>.Instance.revolverCoinsList)
+        {
+            var timer = coin.GetOrAddComponent<CoinTimers>();
+            if (coin.IsInvoking(nameof(Coin.GetDeleted)))
+                timer.deleteTimer += Time.deltaTime;
 
-                    if (coin.IsInvoking(nameof(Coin.TripleTime))) 
-                        coin.GetComponent<CoinTimers>().tripleTimer += Time.deltaTime;
+            if (coin.IsInvoking(nameof(Coin.StartCheckingSpeed)))
+                timer.checkSpeedTimer += Time.deltaTime;
 
-                    if (coin.IsInvoking(nameof(Coin.TripleTimeEnd))) 
-                        coin.GetComponent<CoinTimers>().tripleEndTimer += Time.deltaTime;
+            if (coin.IsInvoking(nameof(Coin.TripleTime)))
+                timer.tripleTimer += Time.deltaTime;
 
-                    if (coin.IsInvoking(nameof(Coin.DoubleTime)))
-                        coin.GetComponent<CoinTimers>().doubleTimer += Time.deltaTime;
-                }
-            }
+            if (coin.IsInvoking(nameof(Coin.TripleTimeEnd)))
+                timer.tripleEndTimer += Time.deltaTime;
+
+            if (coin.IsInvoking(nameof(Coin.DoubleTime)))
+                timer.doubleTimer += Time.deltaTime;
         }
 
         ManageInputs();
@@ -104,65 +110,49 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             hasSaved = true;
         }
 
-        if (hasSaved)
-        {
-            if (load.WasPeformed())
-            {
-                // hacky workaround that makes it so if we saved at a point before v2 existed it just resets the room the same way CheckPoints do it so that
-                // we can practice 1-4 properly
-                if (Plugin.Instance.atCheckpoint != null && FindObjectOfType<V2>() != null)
-                {
-                    PseudoResetRoom();
-                }
+        if (!hasSaved || !load.WasPeformed()) return;
+        // hacky workaround that makes it so if we saved at a point before v2 existed it just resets the room the same way CheckPoints do it so that
+        // we can practice 1-4 properly
+        if (Plugin.Instance.atCheckpoint && FindObjectOfType<V2>())
+            PseudoResetRoom();
 
-                // this is technically wrong, it should instead save whatever the slomo attachments hasBeenDone value was when we save but due to the way slomos are used
-                // in game i havent seen a difference
+        // this is technically wrong, it should instead save whatever the slomo attachments
+        // hasBeenDone value was when we save but due to the way slomos are used
+        // in game i havent seen a difference
+        foreach (var attach in FindObjectsOfType<SlowMo>()
+                              .Select(slomo => slomo.GetComponent<SlowMoAttachment>())
+                              .Where(attach => attach != null))
+            attach.hasBeenDone = false;
 
-                foreach (SlowMo slomo in FindObjectsOfType<SlowMo>())
-                {
-                    SlowMoAttachment attach = slomo.GetComponent<SlowMoAttachment>();
-                    if (attach != null)
-                        attach.hasBeenDone = false;
-                }
-
-                grenadeVariables.SetVariables();
-                ProjectileVariables.SetVariables();
-                CoinVariables.SetVariables();
-                v2Variables.SetVariables();
-                playerVariables.SetVariables(Plugin.Instance.player);
-                WeaponChargeVariables.SetVariables();
-                CannonBallVariables.SetVariables();
-                ObjectActivatorVariables.SetVariables();
-                LoadedRoomsVariables.SetVariables();
-            }
-        }
+        grenadeVariables.SetVariables();
+        ProjectileVariables.SetVariables();
+        CoinVariables.SetVariables();
+        v2Variables.SetVariables();
+        playerVariables.SetVariables(Plugin.Instance.player);
+        WeaponChargeVariables.SetVariables();
+        CannonBallVariables.SetVariables();
+        ObjectActivatorVariables.SetVariables();
+        LoadedRoomsVariables.SetVariables();
     }
 
     // copy paste of CheckPoint.ResetRoom() but only the bit I care about (running the actual function makes it so your weapon "refreshes")
     public static void PseudoResetRoom()
     {
-        var checkp = Plugin.Instance.atCheckpoint;
-        var defaultRoom = checkp.defaultRooms[checkp.i];
+        var checkP = Plugin.Instance.atCheckpoint;
+        for (; checkP.i < checkP.defaultRooms.Count - 1; checkP.i++)
+        {
+            checkP = Plugin.Instance.atCheckpoint;
+            var defaultRoom = checkP.defaultRooms[checkP.i];
 
-        Vector3 position = checkp.newRooms[checkp.i].transform.position;
-        checkp.newRooms[checkp.i].SetActive(value: false);
-        Object.Destroy(checkp.newRooms[checkp.i]);
-        checkp.newRooms[checkp.i] = Object.Instantiate(defaultRoom, position, defaultRoom.transform.rotation, defaultRoom.transform.parent);
-        checkp.newRooms[checkp.i].SetActive(value: true);
-        Bonus[] componentsInChildren = checkp.newRooms[checkp.i].GetComponentsInChildren<Bonus>(includeInactive: true);
-        if (componentsInChildren != null && componentsInChildren.Length != 0)
-        {
-            Bonus[] array = componentsInChildren;
-            for (int i = 0; i < array.Length; i++)
-            {
-                array[i].UpdateStatsManagerReference();
-            }
-        }
-        if (checkp.i + 1 < checkp.defaultRooms.Count)
-        {
-            checkp.i++;
-            PseudoResetRoom();
-            return;
+            var position = checkP.newRooms[checkP.i].transform.position;
+            checkP.newRooms[checkP.i].SetActive(value: false);
+            Destroy(checkP.newRooms[checkP.i]);
+            checkP.newRooms[checkP.i] = Instantiate(defaultRoom, position, defaultRoom.transform.rotation, defaultRoom.transform.parent);
+            checkP.newRooms[checkP.i].SetActive(value: true);
+            var bonuses = checkP.newRooms[checkP.i].GetComponentsInChildren<Bonus>(includeInactive: true);
+            if (bonuses == null) continue;
+            foreach (var bonus in bonuses)
+                bonus.UpdateStatsManagerReference();
         }
     }
 
@@ -193,12 +183,9 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
                 continue;
 
             var targetField = target.GetType().GetField(field.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-            if (targetField != null && targetField.FieldType == field.FieldType)
-            {
-                object value = field.GetValue(source);
-                targetField.SetValue(target, value);
-            }
+            if (targetField == null || targetField.FieldType != field.FieldType) continue;
+            var value = field.GetValue(source);
+            targetField.SetValue(target, value);
         }
     }
 }

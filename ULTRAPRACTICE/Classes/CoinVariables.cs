@@ -67,47 +67,48 @@ public static class CoinVariables
         public bool dontDestroyOnPlayerRespawn = false;
 
         public bool ignoreBlessedEnemies = false;
-        public void CopyFrom(Coin obj)
+
+        public void CopyFrom(Coin coin)
         {
-            power = obj.power;
-            ricochets = obj.ricochets;
-            shot = obj.shot;
-            shotByEnemy = obj.shotByEnemy;
-            timeToDelete = obj.timeToDelete;
-            hitTimes = obj.hitTimes;
-            doubled = obj.doubled;
-            checkingSpeed = obj.checkingSpeed;
+            power = coin.power;
+            ricochets = coin.ricochets;
+            shot = coin.shot;
+            shotByEnemy = coin.shotByEnemy;
+            timeToDelete = coin.timeToDelete;
+            hitTimes = coin.hitTimes;
+            doubled = coin.doubled;
+            checkingSpeed = coin.checkingSpeed;
 
-            pos = obj.transform.position;
-            rot = obj.transform.rotation;
-            vel = obj.rb.velocity;
-            gameObject = obj.gameObject;
+            pos = coin.transform.position;
+            rot = coin.transform.rotation;
+            vel = coin.rb.velocity;
+            gameObject = coin.gameObject;
 
-            checkSpeedTimerSaved = obj.GetComponent<CoinTimers>().checkSpeedTimer;
-            deleteTimerSaved = obj.GetComponent<CoinTimers>().deleteTimer;
-            tripleTimerSaved = obj.GetComponent<CoinTimers>().tripleTimer;
-            tripleEndTimerSaved = obj.GetComponent<CoinTimers>().tripleEndTimer;
-            doubleTimerSaved = obj.GetComponent<CoinTimers>().doubleTimer;
-            invokingDeletion = obj.IsInvoking(nameof(Coin.GetDeleted));
-            invokingTripleTime = obj.IsInvoking(nameof(Coin.TripleTime));
-            invokingDoubleTime = obj.IsInvoking(nameof(Coin.DoubleTime));
-            invokingTripleTimeEnd = obj.IsInvoking(nameof(Coin.TripleTimeEnd));
-            invokingCheckingSpeed = obj.IsInvoking(nameof(Coin.StartCheckingSpeed));
+            checkSpeedTimerSaved = coin.GetComponent<CoinTimers>().checkSpeedTimer;
+            deleteTimerSaved = coin.GetComponent<CoinTimers>().deleteTimer;
+            tripleTimerSaved = coin.GetComponent<CoinTimers>().tripleTimer;
+            tripleEndTimerSaved = coin.GetComponent<CoinTimers>().tripleEndTimer;
+            doubleTimerSaved = coin.GetComponent<CoinTimers>().doubleTimer;
+            invokingDeletion = coin.IsInvoking(nameof(Coin.GetDeleted));
+            invokingTripleTime = coin.IsInvoking(nameof(Coin.TripleTime));
+            invokingDoubleTime = coin.IsInvoking(nameof(Coin.DoubleTime));
+            invokingTripleTimeEnd = coin.IsInvoking(nameof(Coin.TripleTimeEnd));
+            invokingCheckingSpeed = coin.IsInvoking(nameof(Coin.StartCheckingSpeed));
         }
 
-        public void CopyTo(Coin component)
+        public void CopyTo(Coin coin)
         {
-            component.transform.position = pos;
-            component.transform.rotation = rot;
-            component.rb.velocity = vel;
-            component.timeToDelete = timeToDelete;
-            component.power = power;
-            component.ricochets = ricochets;
-            component.shot = shot;
-            component.shotByEnemy = shotByEnemy;
-            component.hitTimes = hitTimes;
-            component.doubled = doubled;
-            component.checkingSpeed = checkingSpeed;
+            coin.transform.position = pos;
+            coin.transform.rotation = rot;
+            coin.rb.velocity = vel;
+            coin.timeToDelete = timeToDelete;
+            coin.power = power;
+            coin.ricochets = ricochets;
+            coin.shot = shot;
+            coin.shotByEnemy = shotByEnemy;
+            coin.hitTimes = hitTimes;
+            coin.doubled = doubled;
+            coin.checkingSpeed = checkingSpeed;
         }
     }
 
@@ -115,15 +116,15 @@ public static class CoinVariables
 
     public static void SaveVariables()
     {
-
-        var allObjs = Object.FindObjectsOfType<Coin>();
-        states = allObjs
-                .Select(obj =>
+        var coins = Object.FindObjectsOfType<Coin>();
+        states = coins
+                .Select(coin =>
                  {
                      var prop = new CoinProps();
-                     prop.CopyFrom(obj);
+                     prop.CopyFrom(coin);
                      return prop;
-                 }).ToArray();
+                 })
+                .ToArray();
     }
 
     public static void SetVariables()
@@ -135,9 +136,9 @@ public static class CoinVariables
         for (var i = 0; i < states.Length; i++)
         {
             var backupCopy = Object.Instantiate(Plugin.Instance.coin, states[i].pos, states[i].rot);
-            var component = backupCopy.GetComponentInChildren<Coin>();
+            var coinComp = backupCopy.GetComponentInChildren<Coin>();
             states[i].gameObject = backupCopy;
-            SetVars(component, i);
+            SetVars(coinComp, i);
         }
     }
 
