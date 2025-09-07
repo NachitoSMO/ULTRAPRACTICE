@@ -1,60 +1,66 @@
-﻿using ULTRAPRACTICE.Interfaces;
+﻿using System.Collections.ObjectModel;
+using System.Linq;
+using HarmonyLib;
+using JetBrains.Annotations;
+using ULTRAPRACTICE.Helpers;
+using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
 namespace ULTRAPRACTICE.ClassSavers;
 
-public class ProjectileVariables : IVariableSaver
+public sealed class ProjectileVariables : VariableSaver<ProjectileVariables.ProjectileProps, Projectile>
 {
-    public struct properties
+    public sealed class ProjectileProps : ITypeProperties<Projectile, ProjectileProps>
     {
+        [UsedImplicitly]
         public GameObject gameObject;
 
-        public Projectile backupObject;
-    }
-
-    public static properties[] states;
-
-    public void SaveVariables()
-    {
-        if (states != null)
+        public Projectile BackupObject { get; set; }
+        public ProjectileProps CopyFrom(Projectile other)
         {
-            for (int i = 0; i < states.Length; i++)
-            {
-                Object.Destroy(states[i].backupObject);
-            }
+            gameObject = other.gameObject;
+            BackupObject = Object.Instantiate(other,
+                                              other.gameObject.transform.position,
+                                              other.transform.rotation);
+            UpdateBehaviour.CopyScripts(other.gameObject, BackupObject.gameObject);
+            BackupObject.rb = BackupObject.GetComponent<Rigidbody>();
+            BackupObject.rb.velocity = other.rb.velocity;
+            BackupObject.gameObject.SetActive(false);
+            return this;
         }
 
-        Projectile[] allObjs = Object.FindObjectsOfType<Projectile>();
-        states = new properties[allObjs.Length];
-
-        for (int i = 0; i < allObjs.Length; i++)
+        public void Restore()
         {
-            states[i].gameObject = allObjs[i].gameObject;
-            states[i].backupObject = Object.Instantiate(allObjs[i], allObjs[i].gameObject.transform.position, allObjs[i].transform.rotation);
-            UpdateBehaviour.CopyScripts(allObjs[i].gameObject, states[i].backupObject.gameObject);
-            states[i].backupObject.rb = states[i].backupObject.GetComponent<Rigidbody>();
-            states[i].backupObject.rb.velocity = allObjs[i].rb.velocity;
-            states[i].backupObject.gameObject.SetActive(false);
-
-        }
-    }
-
-    public void SetVariables()
-    {
-        Projectile[] projectiles = Object.FindObjectsOfType<Projectile>();
-        for (int i = 0; i < projectiles.Length; i++)
-        {
-            if (projectiles[i].gameObject.activeSelf) Object.Destroy(projectiles[i].gameObject);
-        }
-
-        for (int i = 0; i < states.Length; i++)
-        {
-            Projectile backupCopy = Object.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
-            UpdateBehaviour.CopyScripts(states[i].backupObject.gameObject, backupCopy.gameObject);
-            states[i].gameObject = backupCopy.gameObject;
+            var backupCopy = Object.Instantiate(BackupObject,
+                                                BackupObject.transform.position,
+                                                BackupObject.transform.rotation);
+            UpdateBehaviour.CopyScripts(BackupObject.gameObject, backupCopy.gameObject);
+            gameObject = backupCopy.gameObject;
             backupCopy.rb = backupCopy.GetComponent<Rigidbody>();
-            backupCopy.rb.velocity = states[i].backupObject.rb.velocity;
+            backupCopy.rb.velocity = BackupObject.rb.velocity;
             backupCopy.gameObject.SetActive(true);
         }
+    }
+
+    public override ReadOnlyCollection<ProjectileProps> States { get; set; }
+
+    public override void SaveVariables()
+    {
+        if (States != null)
+            foreach (var state in States)
+                Object.Destroy(state.BackupObject);
+
+        States = Object.FindObjectsOfType<Projectile>()
+                       .Select(proj => new ProjectileProps().CopyFrom(proj))
+                       .ToArray().AsReadOnly();
+    }
+
+    public override void SetVariables()
+    {
+        Object.FindObjectsOfType<Projectile>()
+              .Where(proj => proj.gameObject.activeSelf)
+              .Do(proj => Object.Destroy(proj.gameObject));
+        foreach (var state in States)
+            state.Restore();
     }
 }

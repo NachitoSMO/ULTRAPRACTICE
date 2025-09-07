@@ -1,62 +1,62 @@
-﻿using ULTRAPRACTICE.Interfaces;
+﻿using System.Collections.ObjectModel;
+using System.Linq;
+using HarmonyLib;
+using JetBrains.Annotations;
+using ULTRAPRACTICE.Helpers;
+using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
 namespace ULTRAPRACTICE.ClassSavers;
 
-public sealed class CannonBallVariables : IVariableSaver
+public sealed class CannonBallVariables : VariableSaver<CannonBallVariables.CannonballProps, Cannonball>
 {
-    public struct properties
+    public sealed class CannonballProps : ITypeProperties<Cannonball, CannonballProps>
     {
+        [UsedImplicitly]
         public GameObject gameObject;
 
-        public Cannonball backupObject;
-    }
-
-    public static properties[] states;
-
-    public void SaveVariables()
-    {
-        if (states != null)
+        public Cannonball BackupObject { get; set; }
+        public CannonballProps CopyFrom(Cannonball other)
         {
-            for (int i = 0; i < states.Length; i++)
-            {
-                Object.Destroy(states[i].backupObject);
-            }
+            gameObject = other.gameObject;
+            BackupObject = Object.Instantiate(other, other.gameObject.transform.position, other.transform.rotation);
+            UpdateBehaviour.CopyScripts(other.gameObject, BackupObject.gameObject);
+            BackupObject.rb = BackupObject.GetComponent<Rigidbody>();
+            BackupObject.rb.velocity = other.rb.velocity;
+            BackupObject.gameObject.SetActive(false);
+            return this;
         }
 
-        Cannonball[] allObjs = Object.FindObjectsOfType<Cannonball>();
-        states = new properties[allObjs.Length];
-
-        for (int i = 0; i < allObjs.Length; i++)
+        public void Restore()
         {
-            states[i].gameObject = allObjs[i].gameObject;
-            states[i].backupObject = Object.Instantiate(allObjs[i], allObjs[i].gameObject.transform.position, allObjs[i].transform.rotation);
-
-            UpdateBehaviour.CopyScripts(allObjs[i].gameObject, states[i].backupObject.gameObject);
-
-            states[i].backupObject.rb = states[i].backupObject.GetComponent<Rigidbody>();
-            states[i].backupObject.rb.velocity = allObjs[i].rb.velocity;
-            states[i].backupObject.gameObject.SetActive(false);
-
-        }
-    }
-
-    public void SetVariables()
-    {
-        Cannonball[] projectiles = Object.FindObjectsOfType<Cannonball>();
-        for (int i = 0; i < projectiles.Length; i++)
-        {
-            if (projectiles[i].gameObject.activeSelf) Object.Destroy(projectiles[i].gameObject);
-        }
-
-        for (int i = 0; i < states.Length; i++)
-        {
-            Cannonball backupCopy = Object.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
-            UpdateBehaviour.CopyScripts(states[i].backupObject.gameObject, backupCopy.gameObject);
-            states[i].gameObject = backupCopy.gameObject;
+            var backupCopy = Object.Instantiate(BackupObject, BackupObject.transform.position, BackupObject.transform.rotation);
+            UpdateBehaviour.CopyScripts(BackupObject.gameObject, backupCopy.gameObject);
+            gameObject = backupCopy.gameObject;
             backupCopy.rb = backupCopy.GetComponent<Rigidbody>();
-            backupCopy.rb.velocity = states[i].backupObject.rb.velocity;
+            backupCopy.rb.velocity = BackupObject.rb.velocity;
             backupCopy.gameObject.SetActive(true);
         }
+    }
+    public override ReadOnlyCollection<CannonballProps> States { get; set; }
+
+    public override void SaveVariables()
+    {
+        if (States != null)
+            foreach (var state in States)
+                Object.Destroy(state.BackupObject);
+        States = Object.FindObjectsOfType<Cannonball>()
+                       .Select(obj => new CannonballProps().CopyFrom(obj))
+                       .ToArray()
+                       .AsReadOnly();
+    }
+
+    public override void SetVariables()
+    {
+        Object.FindObjectsOfType<Cannonball>()
+              .Where(cannonball => cannonball.gameObject.activeSelf)
+              .Do(cannonball => Object.Destroy(cannonball.gameObject));
+
+        foreach (var state in States)
+            state.Restore();
     }
 }

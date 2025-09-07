@@ -1,6 +1,11 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using HarmonyLib;
+using ULTRAPRACTICE.Helpers;
 using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace ULTRAPRACTICE.ClassSavers;
 
@@ -8,61 +13,64 @@ namespace ULTRAPRACTICE.ClassSavers;
 /// grenades use the old implementation because otherwise your log gets spammed with null reference exceptions when using rockets at fixedUpdate despite the rockets
 /// working just fine
 /// </summary>
-public sealed class GrenadeVariables : IVariableSaver
+public sealed class GrenadeVariables : VariableSaver<GrenadeVariables.GrenadeProps, Grenade>
 {
-    public class Properties
+    public sealed class GrenadeProps : ITypeProperties<Grenade, GrenadeProps>
     {
-        public GameObject gameObject = null;
+        public GameObject grenadeObj = null;
 
-        public Grenade backupObject = null;
-    }
+        public Grenade BackupObject { get; set; } = null;
 
-    public static Properties[] states;
-
-    public void SaveVariables()
-    {
-        if (states != null)
+        public GrenadeProps CopyFrom(Grenade grenade)
         {
-            for (int i = 0; i < states.Length; i++)
-            {
-                Object.Destroy(states[i].backupObject);
-            }
+            grenadeObj = grenade.gameObject;
+            BackupObject = Object.Instantiate(grenade,
+                                              grenade.gameObject.transform.position,
+                                              grenade.transform.rotation);
+            UpdateBehaviour.CopyScripts(grenade.gameObject, BackupObject.gameObject);
+            BackupObject.rb = BackupObject.GetComponent<Rigidbody>();
+            BackupObject.rb.velocity = grenade.rb.velocity;
+            BackupObject.gameObject.SetActive(false);
+            return this;
         }
 
-        var allObjs = Object.FindObjectsOfType<Grenade>();
-        states = new Properties[allObjs.Length];
-
-        for (int i = 0; i < allObjs.Length; i++)
+        public void Restore()
         {
-            states[i] = new Properties
-            {
-                gameObject = allObjs[i].gameObject,
-                backupObject = Object.Instantiate(allObjs[i],
-                                                  allObjs[i].gameObject.transform.position,
-                                                  allObjs[i].transform.rotation)
-            };
-            UpdateBehaviour.CopyScripts(allObjs[i].gameObject, states[i].backupObject.gameObject);
-            states[i].backupObject.rb = states[i].backupObject.GetComponent<Rigidbody>();
-            states[i].backupObject.rb.velocity = allObjs[i].rb.velocity;
-            states[i].backupObject.gameObject.SetActive(false);
-
-        }
-    }
-
-    public void SetVariables()
-    {
-        var Grenades = Object.FindObjectsOfType<Grenade>();
-        foreach (var grenade in Grenades.Where(grenade => grenade.gameObject.activeSelf))
-            Object.Destroy(grenade.gameObject);
-
-        foreach (var state in states)
-        {
-            var backupCopy = Object.Instantiate(state.backupObject, state.backupObject.transform.position, state.backupObject.transform.rotation);
-            UpdateBehaviour.CopyScripts(state.backupObject.gameObject, backupCopy.gameObject);
-            state.gameObject = backupCopy.gameObject;
+            var backupCopy = Object.Instantiate(BackupObject,
+                                                BackupObject.transform.position,
+                                                BackupObject.transform.rotation);
+            UpdateBehaviour.CopyScripts(BackupObject.gameObject, backupCopy.gameObject);
+            grenadeObj = backupCopy.gameObject;
             backupCopy.rb = backupCopy.GetComponent<Rigidbody>();
-            backupCopy.rb.velocity = state.backupObject.rb.velocity;
+            backupCopy.rb.velocity = BackupObject.rb.velocity;
             backupCopy.gameObject.SetActive(true);
         }
+    }
+
+    public override ReadOnlyCollection<GrenadeProps> States { get; set; } = Array.Empty<GrenadeProps>().AsReadOnly();
+
+    public override void SaveVariables()
+    {
+        foreach (var state in States)
+            Object.Destroy(state.BackupObject);
+
+        States = Object.FindObjectsOfType<Grenade>()
+                       .Select(grenade =>
+                        {
+                            var prop = new GrenadeProps();
+                            prop.CopyFrom(grenade);
+                            return prop;
+                        })
+                       .ToArray()
+                       .AsReadOnly();
+    }
+
+    public override void SetVariables()
+    {
+        foreach (var grenade in Object.FindObjectsOfType<Grenade>()
+                                      .Where(grenade => grenade.gameObject.activeSelf))
+            Object.Destroy(grenade.gameObject);
+
+        States.Do(state => state.Restore());
     }
 }

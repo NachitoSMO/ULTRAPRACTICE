@@ -1,11 +1,15 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.ObjectModel;
 using System.Linq;
+using ULTRAPRACTICE.Helpers;
 using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace ULTRAPRACTICE.ClassSavers;
 
-public sealed class CoinVariables : IVariableSaver
+public sealed class CoinVariables : VariableSaver<CoinVariables.CoinProps, Coin>
 {
     /// <summary>
     /// coins use the old implementation with a hacky solution to the Invoke() issue because the way I had to get and spawn coins was really strange
@@ -24,7 +28,7 @@ public sealed class CoinVariables : IVariableSaver
         public float doubleTimer;
 
     }
-    public sealed class CoinProps : ITypeProperties<Coin>
+    public sealed class CoinProps : ITypeProperties<Coin, CoinProps>
     {
         public Vector3 pos = default;
 
@@ -85,7 +89,14 @@ public sealed class CoinVariables : IVariableSaver
 
         public bool ignoreBlessedEnemies = false;
 
-        public void CopyFrom(Coin coin)
+        [Obsolete("Don't use this, it's just here to satisfy the interface requirements")]
+        public Coin BackupObject
+        {
+            get => throw new NotImplementedException();
+            set => throw new NotImplementedException();
+        }
+
+        public CoinProps CopyFrom(Coin coin)
         {
             power = coin.power;
             ricochets = coin.ricochets;
@@ -106,15 +117,20 @@ public sealed class CoinVariables : IVariableSaver
             tripleTimerSaved = coin.GetComponent<CoinTimers>().tripleTimer;
             tripleEndTimerSaved = coin.GetComponent<CoinTimers>().tripleEndTimer;
             doubleTimerSaved = coin.GetComponent<CoinTimers>().doubleTimer;
+
             invokingDeletion = coin.IsInvoking(nameof(Coin.GetDeleted));
             invokingTripleTime = coin.IsInvoking(nameof(Coin.TripleTime));
             invokingDoubleTime = coin.IsInvoking(nameof(Coin.DoubleTime));
             invokingTripleTimeEnd = coin.IsInvoking(nameof(Coin.TripleTimeEnd));
             invokingCheckingSpeed = coin.IsInvoking(nameof(Coin.StartCheckingSpeed));
+            return this;
         }
 
-        public void CopyTo(Coin coin)
+        public void Restore()
         {
+            var backup = Object.Instantiate(Plugin.Instance.coin, pos, rot);
+            gameObject = backup;
+            var coin = backup.GetComponentInChildren<Coin>();
             coin.transform.position = pos;
             coin.transform.rotation = rot;
             coin.rb.velocity = vel;
@@ -129,44 +145,23 @@ public sealed class CoinVariables : IVariableSaver
         }
     }
 
-    public static CoinProps[] states;
+    public override ReadOnlyCollection<CoinProps> States { get; set; }
 
-    public void SaveVariables()
-    {
-        var coins = Object.FindObjectsOfType<Coin>();
-        states = coins
-                .Select(coin =>
-                 {
-                     var prop = new CoinProps();
-                     prop.CopyFrom(coin);
-                     return prop;
-                 })
-                .ToArray();
-    }
-
-    public void SetVariables()
+    public override void SetVariables()
     {
         var coins = Object.FindObjectsOfType<Coin>();
         foreach (var coin in coins)
             Object.Destroy(coin.gameObject);
 
-        for (var i = 0; i < states.Length; i++)
+        foreach (var state in States)
         {
-            var backupCopy = Object.Instantiate(Plugin.Instance.coin, states[i].pos, states[i].rot);
-            var coinComp = backupCopy.GetComponentInChildren<Coin>();
-            states[i].gameObject = backupCopy;
-            SetVars(coinComp, i);
+            state.Restore();
+            MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(RestoreInvokes(state.gameObject.GetComponentInChildren<Coin>(), state));
         }
     }
 
-    public static void SetVars(Coin coin, int i)
-    {
-        states[i].CopyTo(coin);
-        MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(RestoreInvokes(coin, i));
-    }
-
     // we do this a frame later because otherwise the coins will start their invokes *after* we cancel them
-    private static IEnumerator RestoreInvokes(Coin coin, int i)
+    private static IEnumerator RestoreInvokes(Coin coin, CoinProps state)
     {
         yield return new WaitForFixedUpdate();
 
@@ -180,15 +175,15 @@ public sealed class CoinVariables : IVariableSaver
         coin.CancelInvoke(nameof(Coin.TripleTimeEnd));
         coin.CancelInvoke(nameof(Coin.DoubleTime));
 
-        if (states[i].invokingCheckingSpeed)
-            coin.Invoke(nameof(Coin.StartCheckingSpeed), 0.1f - states[i].checkSpeedTimerSaved);
-        if (states[i].invokingTripleTime)
-            coin.Invoke(nameof(Coin.TripleTime), 0.35f - states[i].deleteTimerSaved);
-        if (states[i].invokingDoubleTime)
-            coin.Invoke(nameof(Coin.DoubleTime), 1f - states[i].deleteTimerSaved);
-        if (states[i].invokingTripleTimeEnd)
-            coin.Invoke(nameof(Coin.TripleTimeEnd), 0.417f - states[i].deleteTimerSaved);
-        if (states[i].invokingDeletion)
-            coin.Invoke(nameof(Coin.GetDeleted), 5f - states[i].deleteTimerSaved);
+        if (state.invokingCheckingSpeed)
+            coin.Invoke(nameof(Coin.StartCheckingSpeed), 0.1f - state.checkSpeedTimerSaved);
+        if (state.invokingTripleTime)
+            coin.Invoke(nameof(Coin.TripleTime), 0.35f - state.deleteTimerSaved);
+        if (state.invokingDoubleTime)
+            coin.Invoke(nameof(Coin.DoubleTime), 1f - state.deleteTimerSaved);
+        if (state.invokingTripleTimeEnd)
+            coin.Invoke(nameof(Coin.TripleTimeEnd), 0.417f - state.deleteTimerSaved);
+        if (state.invokingDeletion)
+            coin.Invoke(nameof(Coin.GetDeleted), 5f - state.deleteTimerSaved);
     }
 }

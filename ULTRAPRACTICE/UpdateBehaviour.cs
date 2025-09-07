@@ -106,11 +106,11 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
         if (save.WasPeformed())
         {
-            // TODO: perhaps refactor each method to be non-static and implement IVariableSaver or something
+            // TODO: perhaps refactor each method to be non-static and implement VariableSaver or something
             foreach (var saver in savers)
                 saver.SaveVariables();
 
-            if (MonoSingleton<StatsManager>.Instance.currentCheckPoint != null && V2Variables.states.Count == 0)
+            if (MonoSingleton<StatsManager>.Instance.currentCheckPoint != null && ((V2Variables)savers.First(ivs => ivs is V2Variables)).States.Count == 0)
                 Plugin.Instance.atCheckpoint = MonoSingleton<StatsManager>.Instance.currentCheckPoint;
             else Plugin.Instance.atCheckpoint = null;
 

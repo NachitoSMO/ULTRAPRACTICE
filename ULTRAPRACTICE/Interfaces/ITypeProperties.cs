@@ -1,7 +1,12 @@
-﻿namespace ULTRAPRACTICE.Interfaces;
+﻿using JetBrains.Annotations;
 
-public interface ITypeProperties<in T>
+namespace ULTRAPRACTICE.Interfaces;
+[UsedImplicitly]
+public interface ITypeProperties<T, out TSelf>
+    where TSelf : ITypeProperties<T, TSelf>
 {
-    public void CopyFrom(T other);
-    public void CopyTo(T other);
+    T BackupObject { get; set; }
+    
+    public TSelf CopyFrom(T other);
+    public void Restore();
 }
