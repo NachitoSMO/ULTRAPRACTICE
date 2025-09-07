@@ -1,38 +1,32 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 
 namespace ULTRAPRACTICE.Classes;
 
-internal class ObjectActivatorVariables
+internal static class ObjectActivatorVariables
 {
-    public static ObjActVars[] oav;
+    public static ObjActVars[] objActVars;
 
     public static void SaveVariables()
     {
-        if (oav != null)
-        {
-            for (int i = 0; i < oav.Length; i++)
-            {
-                Object.Destroy(oav[i]);
-            }
-        }
+        foreach (var objActVar in objActVars ?? [])
+            Object.Destroy(objActVar);
 
-        ObjectActivator[] allObjs = Object.FindObjectsOfType<ObjectActivator>(true);
-        oav = new ObjActVars[allObjs.Length];
+        var objectActivators = Object.FindObjectsOfType<ObjectActivator>(true);
+        objActVars = new ObjActVars[objectActivators.Length];
 
-        for (int i = 0; i < allObjs.Length; i++)
+        for (var i = 0; i < objectActivators.Length; i++)
         {
-            oav[i] = new GameObject().AddComponent<ObjActVars>();
-            UpdateBehaviour.CopyScripts(allObjs[i].gameObject, oav[i].gameObject);
-            oav[i].activator = allObjs[i];
+            objActVars[i] = new GameObject().AddComponent<ObjActVars>();
+            UpdateBehaviour.CopyScripts(objectActivators[i].gameObject, objActVars[i].gameObject);
+            objActVars[i].activator = objectActivators[i];
         }
     }
 
     public static void SetVariables()
     {
-
-        foreach (var activator in oav)
-        {
-            if (activator.activator.activated && !activator.activated && activator.activator.events != null) activator.activator.events.Revert();
-        }
+        foreach (var activator in objActVars.Where(activator => activator.activator.activated)
+                                            .Where(activator => !activator.activated))
+            activator.activator.events?.Revert();
     }
 }

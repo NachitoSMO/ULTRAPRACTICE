@@ -25,10 +25,8 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
     private void Update()
     {
-        if (Plugin.Instance.player == null)
-        {
-            if (MonoSingleton<NewMovement>.Instance != null) Plugin.Instance.player = MonoSingleton<NewMovement>.Instance;
-        }
+        if (Plugin.Instance.player == null && MonoSingleton<NewMovement>.Instance != null)
+            Plugin.Instance.player = MonoSingleton<NewMovement>.Instance;
 
         if (Plugin.Instance.player != null)
         {
@@ -55,35 +53,27 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
             if (MonoSingleton<CoinList>.Instance.revolverCoinsList.Count != 0)
             {
-                if (Plugin.Instance.coin == null) Plugin.Instance.coin = FindObjectOfType<Revolver>().coin;
-                foreach (Coin coin in MonoSingleton<CoinList>.Instance.revolverCoinsList)
+                if (Plugin.Instance.coin == null)
+                    Plugin.Instance.coin = FindObjectOfType<Revolver>().coin;
+                foreach (var coin in MonoSingleton<CoinList>.Instance.revolverCoinsList)
                 {
-                    if (coin.GetComponent<CoinTimers>() == null) coin.gameObject.AddComponent<CoinTimers>();
+                    if (coin.GetComponent<CoinTimers>() == null) 
+                        coin.gameObject.AddComponent<CoinTimers>();
 
                     if (coin.IsInvoking(nameof(Coin.GetDeleted)))
-                    {
                         coin.GetComponent<CoinTimers>().deleteTimer += Time.deltaTime;
-                    }
 
-                    if (coin.IsInvoking(nameof(Coin.StartCheckingSpeed)))
-                    {
+                    if (coin.IsInvoking(nameof(Coin.StartCheckingSpeed))) 
                         coin.GetComponent<CoinTimers>().checkSpeedTimer += Time.deltaTime;
-                    }
 
-                    if (coin.IsInvoking(nameof(Coin.TripleTime)))
-                    {
+                    if (coin.IsInvoking(nameof(Coin.TripleTime))) 
                         coin.GetComponent<CoinTimers>().tripleTimer += Time.deltaTime;
-                    }
 
-                    if (coin.IsInvoking(nameof(Coin.TripleTimeEnd)))
-                    {
+                    if (coin.IsInvoking(nameof(Coin.TripleTimeEnd))) 
                         coin.GetComponent<CoinTimers>().tripleEndTimer += Time.deltaTime;
-                    }
 
                     if (coin.IsInvoking(nameof(Coin.DoubleTime)))
-                    {
                         coin.GetComponent<CoinTimers>().doubleTimer += Time.deltaTime;
-                    }
                 }
             }
         }
@@ -93,15 +83,13 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
     private void ManageInputs()
     {
-        if (Plugin.Instance.player == null)
-        {
-            return;
-        }
+        if (Plugin.Instance.player == null) return;
 
         if (save.WasPeformed())
         {
+            // TODO: perhaps refactor each method to be non-static and implement IVariableSaver or something
             grenadeVariables.SaveVariables();
-            coinVariables.SaveVariables();
+            CoinVariables.SaveVariables();
             ProjectileVariables.SaveVariables();
             v2Variables.SaveVariables();
             playerVariables.SaveVariables(Plugin.Instance.player);
@@ -139,7 +127,7 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
                 grenadeVariables.SetVariables();
                 ProjectileVariables.SetVariables();
-                coinVariables.SetVariables();
+                CoinVariables.SetVariables();
                 v2Variables.SetVariables();
                 playerVariables.SetVariables(Plugin.Instance.player);
                 WeaponChargeVariables.SetVariables();
