@@ -6,7 +6,6 @@ public static class LoadedRoomsVariables
 {
     public static List<GameObject> activeObjs = new();
     public static List<GameObject> inactiveObjs = new();
-    public static GameObject savedWeapon;
     public static bool doorOpened;
 
     public static void SaveVariables()

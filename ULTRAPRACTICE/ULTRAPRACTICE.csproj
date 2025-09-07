@@ -46,6 +46,11 @@
       <Private>false</Private>
       <CopyLocal>false</CopyLocal>
     </Reference>
+	<Reference Include="Unity.Mathematics">
+		<HintPath>$(UltrakillDir)ULTRAKILL_Data/Managed/Unity.Mathematics.dll</HintPath>
+		<Private>false</Private>
+		<CopyLocal>false</CopyLocal>
+	</Reference>
     <Reference Include="Configgy">
       <HintPath>lib\Configgy.dll</HintPath>
     </Reference>

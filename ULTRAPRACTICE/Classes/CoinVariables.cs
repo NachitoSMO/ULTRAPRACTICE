@@ -100,7 +100,7 @@ public static class CoinVariables
         {
             coin.transform.position = pos;
             coin.transform.rotation = rot;
-            coin.rb.velocity = vel;
+            coin.GetComponent<Rigidbody>().velocity = vel;
             coin.timeToDelete = timeToDelete;
             coin.power = power;
             coin.ricochets = ricochets;
