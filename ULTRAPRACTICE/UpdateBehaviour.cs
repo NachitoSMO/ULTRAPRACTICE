@@ -104,7 +104,8 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             ObjectActivatorVariables.SaveVariables();
             LoadedRoomsVariables.SaveVariables();
 
-            if (MonoSingleton<StatsManager>.Instance.currentCheckPoint != null && v2Variables.states.Length == 0) Plugin.Instance.atCheckpoint = MonoSingleton<StatsManager>.Instance.currentCheckPoint;
+            if (MonoSingleton<StatsManager>.Instance.currentCheckPoint != null && v2Variables.states.Length == 0)
+                Plugin.Instance.atCheckpoint = MonoSingleton<StatsManager>.Instance.currentCheckPoint;
             else Plugin.Instance.atCheckpoint = null;
 
             hasSaved = true;
@@ -145,12 +146,12 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             var defaultRoom = checkP.defaultRooms[checkP.i];
 
             var position = checkP.newRooms[checkP.i].transform.position;
-            checkP.newRooms[checkP.i].SetActive(value: false);
-            Destroy(checkP.newRooms[checkP.i]);
-            checkP.newRooms[checkP.i] = Instantiate(defaultRoom, position, defaultRoom.transform.rotation, defaultRoom.transform.parent);
-            checkP.newRooms[checkP.i].SetActive(value: true);
-            var bonuses = checkP.newRooms[checkP.i].GetComponentsInChildren<Bonus>(includeInactive: true);
-            if (bonuses == null) continue;
+            checkP.newRooms[checkP.i] = checkP.newRooms[checkP.i]
+                                              .ReplaceWith(Instantiate(defaultRoom, position,
+                                                                       defaultRoom.transform.rotation,
+                                                                       defaultRoom.transform.parent));
+            var bonuses = checkP.newRooms[checkP.i]
+                                .GetComponentsInChildren<Bonus>(includeInactive: true);
             foreach (var bonus in bonuses)
                 bonus.UpdateStatsManagerReference();
         }
