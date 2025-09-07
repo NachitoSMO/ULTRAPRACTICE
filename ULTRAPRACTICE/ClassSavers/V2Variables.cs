@@ -1,74 +1,91 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Collections.ObjectModel;
+using System.Linq;
+using HarmonyLib;
+using ULTRAPRACTICE.Helpers;
 using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace ULTRAPRACTICE.ClassSavers;
 
 public sealed class V2Variables : IVariableSaver
 {
-    public struct properties
+    public sealed class V2Properties : ITypeProperties<V2>
     {
-        public V2 gameObject;
+        public V2 v2Obj;
 
         public GameObject backupObject;
 
         public Vector3 vel;
 
         public bool kinematic;
+
+        public void CopyFrom(V2 other)
+        {
+            v2Obj = other;
+            vel = other.rb.velocity;
+            kinematic = other.rb.isKinematic;
+        }
+
+        public void CopyTo(V2 other)
+        {
+            v2Obj.gameObject.SetActive(false);
+            v2Obj.gc.onGround = false;
+            v2Obj.gameObject.transform.position = backupObject.transform.position;
+            v2Obj.gameObject.transform.rotation = backupObject.transform.rotation;
+            v2Obj.gameObject.SetActive(true);
+        }
     }
 
-    public static properties[] states;
+    public static ReadOnlyCollection<V2Properties> states;
 
     public void SaveVariables()
     {
-        V2[] allObjs = Object.FindObjectsOfType<V2>();
-        states = new properties[allObjs.Length];
+        states =
+            Object.FindObjectsOfType<V2>()
+                  .Select(v2 =>
+                   {
+                       var props = new V2Properties();
+                       props.CopyFrom(v2);
+                       props.backupObject = Object.Instantiate(v2.gameObject,
+                                                               v2.gameObject.transform.position,
+                                                               v2.gameObject.transform.rotation);
+                       props.backupObject.SetActive(false);
+                       UpdateBehaviour.CopyScripts(v2.gameObject, props.backupObject);
+                       return props;
+                   })
+                  .ToArray()
+                  .AsReadOnly();
 
-        for (int i = 0; i < allObjs.Length; i++)
-        {
-            states[i].gameObject = allObjs[i];
-
-            states[i].backupObject = Object.Instantiate(allObjs[i].gameObject, allObjs[i].gameObject.transform.position, allObjs[i].gameObject.transform.rotation);
-            states[i].backupObject.SetActive(false);
-            states[i].vel = allObjs[i].rb.velocity;
-            states[i].kinematic = allObjs[i].rb.isKinematic;
-
-            UpdateBehaviour.CopyScripts(allObjs[i].gameObject, states[i].backupObject);
-
-        }
     }
 
     public void SetVariables()
     {
-        for (int i = 0; i < states.Length; i++)
-        {
-            if (states[i].gameObject != null && states[i].backupObject != null)
-            {
-                //we set v2 inactive and active again right after as a hacky way for v2 to not immediately do a stomp after we teleport it mid air
-                states[i].gameObject.gameObject.SetActive(false);
-                states[i].gameObject.gc.onGround = false;
-                states[i].gameObject.gameObject.transform.position = states[i].backupObject.transform.position;
-                states[i].gameObject.gameObject.transform.rotation = states[i].backupObject.transform.rotation;
-
-                states[i].gameObject.gameObject.SetActive(true);
-                // also found we might? need a single frame before we do the next part because otherwise weird stuff happens
-                MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(SetVelocityAfter(i));
-            }
-        }
+        states.Where(state => state.v2Obj && state.backupObject)
+              .Do(state =>
+               {
+                   // we set v2 inactive and active again right after as a hacky way for v2
+                   // to not immediately do a stomp after we teleport it mid air
+                   state.CopyTo(state.v2Obj);
+                   // also found we might? need a single frame before we do the next part because otherwise weird stuff happens
+                   MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(SetVelocityAfter(state));
+               });
     }
 
-    public static IEnumerator SetVelocityAfter(int i)
+    public static IEnumerator SetVelocityAfter(V2Properties state)
     {
         yield return new WaitForFixedUpdate();
-        Rigidbody rb = states[i].gameObject.GetComponent<Rigidbody>();
+        var rb = state.v2Obj.GetComponent<Rigidbody>();
         rb.isKinematic = false;
-        if (rb != null)
+        if (rb)
         {
-            rb.velocity = states[i].vel;
-            rb.isKinematic = states[i].kinematic;
+            rb.velocity = state.vel;
+            rb.isKinematic = state.kinematic;
         }
-        states[i].gameObject.gc.CheckColsOnce();
+        state.v2Obj.gc.CheckColsOnce();
 
-        UpdateBehaviour.CopyScripts(states[i].backupObject, states[i].gameObject.gameObject);
+        UpdateBehaviour.CopyScripts(state.backupObject, state.v2Obj.gameObject);
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ULTRAPRACTICE.ClassSavers;
 
-//can't make a backup weaponcharges class since its a MonoSingleton thus we make our own
+//can't make a backup weaponcharges class since it is a MonoSingleton thus we make our own
 
 public sealed partial class WeaponChargeVariables : IVariableSaver
 {
@@ -11,7 +11,7 @@ public sealed partial class WeaponChargeVariables : IVariableSaver
 
     public void SaveVariables()
     {
-        if (wcs != null) Object.Destroy(wcs.gameObject);
+        if (wcs) Object.Destroy(wcs.gameObject);
         wcs = new GameObject().AddComponent<WeaponChargesSaved>();
         UpdateBehaviour.CopyValues(wcs, MonoSingleton<WeaponCharges>.Instance);
     }

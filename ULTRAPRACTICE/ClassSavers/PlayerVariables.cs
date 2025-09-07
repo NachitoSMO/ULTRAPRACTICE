@@ -6,7 +6,7 @@ namespace ULTRAPRACTICE.ClassSavers;
 
 public sealed partial class PlayerVariables : IVariableSaver
 {
-    
+
 
     public static Vector3 savedPos;
     public static Vector3 savedVel;

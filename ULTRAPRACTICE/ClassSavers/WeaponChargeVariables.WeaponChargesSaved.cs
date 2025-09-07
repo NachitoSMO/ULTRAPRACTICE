@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace ULTRAPRACTICE.ClassSavers;
 
 public sealed partial class WeaponChargeVariables
 {
+    [UsedImplicitly]
     public sealed class WeaponChargesSaved : MonoBehaviour
     {
         public GunControl gc;

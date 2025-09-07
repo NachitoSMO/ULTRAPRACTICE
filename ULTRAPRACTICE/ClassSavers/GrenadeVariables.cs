@@ -52,7 +52,7 @@ public sealed class GrenadeVariables : IVariableSaver
     public void SetVariables()
     {
         var Grenades = Object.FindObjectsOfType<Grenade>();
-        foreach (var grenade in Grenades.Where(grenade => grenade.gameObject.activeSelf)) 
+        foreach (var grenade in Grenades.Where(grenade => grenade.gameObject.activeSelf))
             Object.Destroy(grenade.gameObject);
 
         foreach (var state in states)

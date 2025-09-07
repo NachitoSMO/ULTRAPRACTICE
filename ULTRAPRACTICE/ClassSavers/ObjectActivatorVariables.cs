@@ -66,7 +66,7 @@ internal sealed class ObjectActivatorVariables : IVariableSaver
 
         public ObjectActivator activator;
     }
-    
+
     public static ObjActVars[] objActVars;
 
     public void SaveVariables()
