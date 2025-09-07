@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using Configgy;
 using System.Reflection;
-using ULTRAPRACTICE.Classes;
+using ULTRAPRACTICE.ClassSavers;
 using ULTRAPRACTICE.Interfaces;
 using ULTRAPRACTICE.Patches;
 using UnityEngine;
@@ -10,7 +10,6 @@ namespace ULTRAPRACTICE;
 
 public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 {
-
     [Configgable] // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private static ConfigKeybind save = new(KeyCode.F1); // configgy doesn't like mice in-game :(
 
@@ -81,7 +80,7 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             Plugin.Instance.coin = FindObjectOfType<Revolver>().coin;
         foreach (var coin in MonoSingleton<CoinList>.Instance.revolverCoinsList)
         {
-            var timer = coin.GetOrAddComponent<CoinTimers>();
+            var timer = coin.GetOrAddComponent<CoinVariables.CoinTimers>();
             if (coin.IsInvoking(nameof(Coin.GetDeleted)))
                 timer.deleteTimer += Time.deltaTime;
 

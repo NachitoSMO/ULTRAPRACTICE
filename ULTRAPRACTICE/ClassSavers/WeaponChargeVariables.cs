@@ -1,11 +1,11 @@
 ﻿using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
-namespace ULTRAPRACTICE.Classes;
+namespace ULTRAPRACTICE.ClassSavers;
 
 //can't make a backup weaponcharges class since its a MonoSingleton thus we make our own
 
-public class WeaponChargeVariables : IVariableSaver
+public sealed partial class WeaponChargeVariables : IVariableSaver
 {
     public static WeaponChargesSaved wcs;
 

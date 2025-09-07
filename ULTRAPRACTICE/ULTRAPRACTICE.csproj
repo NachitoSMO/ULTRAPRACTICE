@@ -55,8 +55,4 @@
     <Publicize Include="Assembly-CSharp" />
   </ItemGroup>
   
-  <ItemGroup>
-    <Folder Include="Classes\ClassSavers\" />
-  </ItemGroup>
-  
 </Project>

@@ -2,10 +2,12 @@
 using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
-namespace ULTRAPRACTICE.Classes;
+namespace ULTRAPRACTICE.ClassSavers;
 
-public sealed class PlayerVariables : IVariableSaver
+public sealed partial class PlayerVariables : IVariableSaver
 {
+    
+
     public static Vector3 savedPos;
     public static Vector3 savedVel;
     public static Quaternion savedRot;
@@ -13,7 +15,6 @@ public sealed class PlayerVariables : IVariableSaver
     public static float rotationY;
     public static bool heavyFall;
     public static NewMovementVars savedVars;
-
     public static float timeUntilNotJumping;
     public static float timeUntilJumpReady;
     public static float timeUntilJumpReadyMax;
@@ -57,9 +58,7 @@ public sealed class PlayerVariables : IVariableSaver
 
         MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(SetVelocityAfter(ply));
     }
-
     //as with v2 i delay the next instructions a frame later so that speed doesnt bug out in weird scenarios and we don't stomp mid air
-
     public static IEnumerator SetVelocityAfter(NewMovement ply)
     {
         yield return new WaitForFixedUpdate();

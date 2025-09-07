@@ -2,7 +2,7 @@
 using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
-namespace ULTRAPRACTICE.Classes;
+namespace ULTRAPRACTICE.ClassSavers;
 
 public sealed class V2Variables : IVariableSaver
 {

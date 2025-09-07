@@ -2,7 +2,8 @@
 using System.Linq;
 using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
-namespace ULTRAPRACTICE.Classes;
+
+namespace ULTRAPRACTICE.ClassSavers;
 
 public sealed class LoadedRoomsVariables : IVariableSaver
 {

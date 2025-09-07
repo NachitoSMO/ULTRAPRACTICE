@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
-namespace ULTRAPRACTICE.Classes;
+namespace ULTRAPRACTICE.ClassSavers;
 
 /// <summary>
 /// grenades use the old implementation because otherwise your log gets spammed with null reference exceptions when using rockets at fixedUpdate despite the rockets

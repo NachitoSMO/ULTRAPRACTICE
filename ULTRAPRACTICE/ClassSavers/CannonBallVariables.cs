@@ -1,15 +1,15 @@
 ﻿using ULTRAPRACTICE.Interfaces;
 using UnityEngine;
 
-namespace ULTRAPRACTICE.Classes;
+namespace ULTRAPRACTICE.ClassSavers;
 
-public class ProjectileVariables : IVariableSaver
+public sealed class CannonBallVariables : IVariableSaver
 {
     public struct properties
     {
         public GameObject gameObject;
 
-        public Projectile backupObject;
+        public Cannonball backupObject;
     }
 
     public static properties[] states;
@@ -24,14 +24,16 @@ public class ProjectileVariables : IVariableSaver
             }
         }
 
-        Projectile[] allObjs = Object.FindObjectsOfType<Projectile>();
+        Cannonball[] allObjs = Object.FindObjectsOfType<Cannonball>();
         states = new properties[allObjs.Length];
 
         for (int i = 0; i < allObjs.Length; i++)
         {
             states[i].gameObject = allObjs[i].gameObject;
             states[i].backupObject = Object.Instantiate(allObjs[i], allObjs[i].gameObject.transform.position, allObjs[i].transform.rotation);
+
             UpdateBehaviour.CopyScripts(allObjs[i].gameObject, states[i].backupObject.gameObject);
+
             states[i].backupObject.rb = states[i].backupObject.GetComponent<Rigidbody>();
             states[i].backupObject.rb.velocity = allObjs[i].rb.velocity;
             states[i].backupObject.gameObject.SetActive(false);
@@ -41,7 +43,7 @@ public class ProjectileVariables : IVariableSaver
 
     public void SetVariables()
     {
-        Projectile[] projectiles = Object.FindObjectsOfType<Projectile>();
+        Cannonball[] projectiles = Object.FindObjectsOfType<Cannonball>();
         for (int i = 0; i < projectiles.Length; i++)
         {
             if (projectiles[i].gameObject.activeSelf) Object.Destroy(projectiles[i].gameObject);
@@ -49,7 +51,7 @@ public class ProjectileVariables : IVariableSaver
 
         for (int i = 0; i < states.Length; i++)
         {
-            Projectile backupCopy = Object.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
+            Cannonball backupCopy = Object.Instantiate(states[i].backupObject, states[i].backupObject.transform.position, states[i].backupObject.transform.rotation);
             UpdateBehaviour.CopyScripts(states[i].backupObject.gameObject, backupCopy.gameObject);
             states[i].gameObject = backupCopy.gameObject;
             backupCopy.rb = backupCopy.GetComponent<Rigidbody>();
