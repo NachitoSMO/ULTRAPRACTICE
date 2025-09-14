@@ -1,4 +1,5 @@
 ﻿using Configgy;
+using TMPro;
 using System.Linq;
 using System.Reflection;
 using ULTRAPRACTICE.Classes;
@@ -16,6 +17,8 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
     private static ConfigKeybind load = new(KeyCode.F2);
 
     private static bool hasSaved = false;
+
+    private static float currentTime;
     void OnLevelWasLoaded(int level)
     {
         hasSaved = false;
@@ -104,6 +107,10 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             OilVariables.SaveVariables();
             ObjectActivatorVariables.SaveVariables();
 
+            if (MonoSingleton<StatsManager>.Instance != null) currentTime = MonoSingleton<StatsManager>.Instance.seconds;
+
+            CreateSubtitle("Saved!");
+
             if (MonoSingleton<StatsManager>.Instance.currentCheckPoint) Plugin.Instance.atCheckpoint = MonoSingleton<StatsManager>.Instance.currentCheckPoint;
 
             hasSaved = true;
@@ -142,6 +149,33 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         LoadedRoomsVariables.SetVariables();
         ObjectActivatorVariables.SetVariables();
 
+        if (MonoSingleton<StatsManager>.Instance != null) MonoSingleton<StatsManager>.Instance.seconds = currentTime;
+
+        CreateSubtitle("Loaded!");
+
+        if (MonoSingleton<CheatsController>.Instance != null && !MonoSingleton<CheatsController>.Instance.cheatsEnabled) MonoSingleton<CheatsController>.Instance.ActivateCheats();
+
+    }
+
+    public static void CreateSubtitle(string title)
+    {
+        SubtitleController subController = MonoSingleton<SubtitleController>.Instance;
+        Subtitle subtitle = Object.Instantiate(subController.subtitleLine, subController.container, worldPositionStays: true);
+        subtitle.GetComponentInChildren<TMP_Text>().text = title;
+        subtitle.fadeInSpeed = subtitle.fadeInSpeed * 7f;
+        subtitle.fadeOutSpeed = subtitle.fadeOutSpeed * 7f;
+        subtitle.holdForBase = 0.15f;
+        subtitle.holdForPerChar = 0.05f;
+        subtitle.gameObject.SetActive(value: true);
+        if (!subController.previousSubtitle)
+        {
+            subtitle.ContinueChain();
+        }
+        else
+        {
+            subController.previousSubtitle.nextInChain = subtitle;
+        }
+        subController.previousSubtitle = subtitle;
     }
 
 
