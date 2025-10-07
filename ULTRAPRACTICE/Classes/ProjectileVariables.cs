@@ -19,7 +19,7 @@ public static class ProjectileVariables
         {
             for (int i = 0; i < states.Length; i++)
             {
-                Object.Destroy(states[i].backupObject);
+                Object.Destroy(states[i].backupObject.gameObject);
             }
         }
 

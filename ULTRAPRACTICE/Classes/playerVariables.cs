@@ -323,10 +323,10 @@ public static class playerVariables
 
     public static void SaveVariables(NewMovement ply)
     {
+        if (savedVars != null) Object.Destroy(savedVars.gameObject);
+
         GameObject plyObj = ply.gameObject;
         Rigidbody rb = ply.rb;
-
-        if (savedVars != null) Object.Destroy(savedVars.gameObject);
 
         savedVars = new GameObject().AddComponent<NewMovementVars>();
 
@@ -353,27 +353,8 @@ public static class playerVariables
         ply.cc.rotationY = rotationY;
         ply.gc.heavyFall = heavyFall;
 
-        MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(SetVelocityAfter(ply));
+        MonoSingleton<UpdateBehaviour>.Instance.Invoke("SetVelocityAfterPly", 0.01f);
     }
 
     //as with v2 i delay the next instructions a frame later so that speed doesnt bug out in weird scenarios and we don't stomp mid air
-
-    public static IEnumerator SetVelocityAfter(NewMovement ply)
-    {
-        yield return new WaitForFixedUpdate();
-        Rigidbody rb = ply.gameObject.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.velocity = savedVel;
-        }
-
-        UpdateBehaviour.CopyValues(ply, savedVars);
-
-        if (ply.jumping)
-        {
-            ply.Invoke(nameof(NewMovement.JumpReady), timeUntilJumpReadyMax - timeUntilJumpReady);
-            ply.Invoke(nameof(NewMovement.NotJumping), timeUntilNotJumpingMax - timeUntilNotJumping);
-        }
-        ply.gc.StopForceOff();
-    }
 }

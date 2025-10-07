@@ -1,177 +1,146 @@
-﻿using System.Collections;
-using System.Linq;
-using ULTRAPRACTICE.Interfaces;
+﻿using ULTRAPRACTICE;
+using ULTRAPRACTICE.Classes;
 using UnityEngine;
 
-namespace ULTRAPRACTICE.Classes;
-
-public static class CoinVariables
+public static class coinVariables
 {
-    public sealed class CoinProps : ITypeProperties<Coin>
+    public struct properties
     {
-        public Vector3 pos = default;
+        public Vector3 pos;
 
-        public Vector3 vel = default;
+        public Vector3 vel;
 
-        public Quaternion rot = default;
+        public Quaternion rot;
 
-        public GameObject gameObject = null;
+        public GameObject gameObject;
 
-        public float deleteTimerSaved = 0;
-        public float checkSpeedTimerSaved = 0;
-        public float tripleTimerSaved = 0;
-        public float tripleEndTimerSaved = 0;
-        public float doubleTimerSaved = 0;
+        public float deleteTimerSaved;
 
-        public bool invokingDeletion = false;
-        public bool invokingTripleTime = false;
-        public bool invokingTripleTimeEnd = false;
-        public bool invokingDoubleTime = false;
-        public bool invokingCheckingSpeed = false;
+        public float checkSpeedTimerSaved;
 
-        public Rigidbody rb = null;
+        public float tripleTimerSaved;
 
-        public bool checkingSpeed = false;
+        public float tripleEndTimerSaved;
 
-        public float timeToDelete = 0;
+        public float doubleTimerSaved;
 
-        public Vector3 hitPoint = default;
+        public bool invokingDeletion;
 
-        public Collider[] cols = null;
+        public bool invokingTripleTime;
 
-        public SphereCollider scol = null;
+        public bool invokingTripleTimeEnd;
 
-        public bool shot = false;
+        public bool invokingDoubleTime;
 
-        [HideInInspector]
-        public bool shotByEnemy = false;
+        public bool invokingCheckingSpeed;
 
-        public float power = 0;
+        public Rigidbody rb;
 
-        public bool quickDraw = false;
+        public bool checkingSpeed;
 
-        public Material uselessMaterial = null;
+        public float timeToDelete;
 
-        public GameObject coinHitSound = null;
+        public Vector3 hitPoint;
+
+        public Collider[] cols;
+
+        public SphereCollider scol;
+
+        public bool shot;
 
         [HideInInspector]
-        public int hitTimes = 0;
+        public bool shotByEnemy;
 
-        public bool doubled = false;
+        private bool wasShotByEnemy;
 
-        public int ricochets = 0;
+        public float power;
+
+        private EnemyIdentifier eid;
+
+        public bool quickDraw;
+
+        public Material uselessMaterial;
+
+        private GameObject altBeam;
+
+        public GameObject coinHitSound;
 
         [HideInInspector]
-        public int difficulty = 0;
+        public int hitTimes;
 
-        public bool dontDestroyOnPlayerRespawn = false;
+        public bool doubled;
 
-        public bool ignoreBlessedEnemies = false;
+        private StyleHUD shud;
 
-        public void CopyFrom(Coin coin)
-        {
-            power = coin.power;
-            ricochets = coin.ricochets;
-            shot = coin.shot;
-            shotByEnemy = coin.shotByEnemy;
-            timeToDelete = coin.timeToDelete;
-            hitTimes = coin.hitTimes;
-            doubled = coin.doubled;
-            checkingSpeed = coin.checkingSpeed;
+        public int ricochets;
 
-            pos = coin.transform.position;
-            rot = coin.transform.rotation;
-            vel = coin.rb.velocity;
-            gameObject = coin.gameObject;
+        [HideInInspector]
+        public int difficulty;
 
-            checkSpeedTimerSaved = coin.GetComponent<CoinTimers>().checkSpeedTimer;
-            deleteTimerSaved = coin.GetComponent<CoinTimers>().deleteTimer;
-            tripleTimerSaved = coin.GetComponent<CoinTimers>().tripleTimer;
-            tripleEndTimerSaved = coin.GetComponent<CoinTimers>().tripleEndTimer;
-            doubleTimerSaved = coin.GetComponent<CoinTimers>().doubleTimer;
-            invokingDeletion = coin.IsInvoking(nameof(Coin.GetDeleted));
-            invokingTripleTime = coin.IsInvoking(nameof(Coin.TripleTime));
-            invokingDoubleTime = coin.IsInvoking(nameof(Coin.DoubleTime));
-            invokingTripleTimeEnd = coin.IsInvoking(nameof(Coin.TripleTimeEnd));
-            invokingCheckingSpeed = coin.IsInvoking(nameof(Coin.StartCheckingSpeed));
-        }
+        public bool dontDestroyOnPlayerRespawn;
 
-        public void CopyTo(Coin coin)
-        {
-            coin.transform.position = pos;
-            coin.transform.rotation = rot;
-            coin.GetComponent<Rigidbody>().velocity = vel;
-            coin.timeToDelete = timeToDelete;
-            coin.power = power;
-            coin.ricochets = ricochets;
-            coin.shot = shot;
-            coin.shotByEnemy = shotByEnemy;
-            coin.hitTimes = hitTimes;
-            coin.doubled = doubled;
-            coin.checkingSpeed = checkingSpeed;
-        }
+        public bool ignoreBlessedEnemies;
     }
 
-    public static CoinProps[] states;
+    public static properties[] states;
 
     public static void SaveVariables()
     {
-        var coins = Object.FindObjectsOfType<Coin>();
-        states = coins
-                .Select(coin =>
-                 {
-                     var prop = new CoinProps();
-                     prop.CopyFrom(coin);
-                     return prop;
-                 })
-                .ToArray();
+        Coin[] array = Object.FindObjectsOfType<Coin>();
+        states = new properties[array.Length];
+        for (int i = 0; i < array.Length; i++)
+        {
+            states[i].power = array[i].power;
+            states[i].ricochets = array[i].ricochets;
+            states[i].shot = array[i].shot;
+            states[i].shotByEnemy = array[i].shotByEnemy;
+            states[i].timeToDelete = array[i].timeToDelete;
+            states[i].hitTimes = array[i].hitTimes;
+            states[i].doubled = array[i].doubled;
+            states[i].checkingSpeed = array[i].checkingSpeed;
+            states[i].pos = array[i].transform.position;
+            states[i].rot = array[i].transform.rotation;
+            states[i].vel = array[i].rb.velocity;
+            states[i].gameObject = array[i].gameObject;
+            states[i].checkSpeedTimerSaved = array[i].GetComponent<CoinTimers>().checkSpeedTimer;
+            states[i].deleteTimerSaved = array[i].GetComponent<CoinTimers>().deleteTimer;
+            states[i].tripleTimerSaved = array[i].GetComponent<CoinTimers>().tripleTimer;
+            states[i].tripleEndTimerSaved = array[i].GetComponent<CoinTimers>().tripleEndTimer;
+            states[i].doubleTimerSaved = array[i].GetComponent<CoinTimers>().doubleTimer;
+            states[i].invokingDeletion = array[i].IsInvoking("GetDeleted");
+            states[i].invokingTripleTime = array[i].IsInvoking("TripleTime");
+            states[i].invokingDoubleTime = array[i].IsInvoking("DoubleTime");
+            states[i].invokingTripleTimeEnd = array[i].IsInvoking("TripleTimeEnd");
+            states[i].invokingCheckingSpeed = array[i].IsInvoking("StartCheckingSpeed");
+        }
     }
 
     public static void SetVariables()
     {
-        var coins = Object.FindObjectsOfType<Coin>();
-        foreach (var coin in coins)
-            Object.Destroy(coin.gameObject);
-
-        for (var i = 0; i < states.Length; i++)
+        for (int j = 0; j < states.Length; j++)
         {
-            var backupCopy = Object.Instantiate(Plugin.Instance.coin, states[i].pos, states[i].rot);
-            var coinComp = backupCopy.GetComponentInChildren<Coin>();
-            states[i].gameObject = backupCopy;
-            SetVars(coinComp, i);
+            Object.Destroy(states[j].gameObject);
+            GameObject gameObject = Object.Instantiate(Plugin.Instance.coin, states[j].pos, states[j].rot);
+            Coin componentInChildren = gameObject.GetComponentInChildren<Coin>();
+            states[j].gameObject = gameObject;
+            SetVars(componentInChildren, j);
         }
+
+        MonoSingleton<UpdateBehaviour>.Instance.Invoke("RestoreCoinInvokes", 0.01f);
     }
 
-    public static void SetVars(Coin coin, int i)
+    public static void SetVars(Coin component, int i)
     {
-        states[i].CopyTo(coin);
-        MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(RestoreInvokes(coin, i));
-    }
-
-    // we do this a frame later because otherwise the coins will start their invokes *after* we cancel them
-    private static IEnumerator RestoreInvokes(Coin coin, int i)
-    {
-        yield return new WaitForFixedUpdate();
-
-        if (coin.checkingSpeed)
-            foreach (var collider in coin.GetComponents<Collider>())
-                collider.enabled = true;
-
-        coin.CancelInvoke(nameof(Coin.StartCheckingSpeed));
-        coin.CancelInvoke(nameof(Coin.GetDeleted));
-        coin.CancelInvoke(nameof(Coin.TripleTime));
-        coin.CancelInvoke(nameof(Coin.TripleTimeEnd));
-        coin.CancelInvoke(nameof(Coin.DoubleTime));
-
-        if (states[i].invokingCheckingSpeed)
-            coin.Invoke(nameof(Coin.StartCheckingSpeed), 0.1f - states[i].checkSpeedTimerSaved);
-        if (states[i].invokingTripleTime)
-            coin.Invoke(nameof(Coin.TripleTime), 0.35f - states[i].deleteTimerSaved);
-        if (states[i].invokingDoubleTime)
-            coin.Invoke(nameof(Coin.DoubleTime), 1f - states[i].deleteTimerSaved);
-        if (states[i].invokingTripleTimeEnd)
-            coin.Invoke(nameof(Coin.TripleTimeEnd), 0.417f - states[i].deleteTimerSaved);
-        if (states[i].invokingDeletion)
-            coin.Invoke(nameof(Coin.GetDeleted), 5f - states[i].deleteTimerSaved);
+        component.transform.position = states[i].pos;
+        component.transform.rotation = states[i].rot;
+        component.GetComponent<Rigidbody>().velocity = states[i].vel;
+        component.timeToDelete = states[i].timeToDelete;
+        component.power = states[i].power;
+        component.ricochets = states[i].ricochets;
+        component.shot = states[i].shot;
+        component.shotByEnemy = states[i].shotByEnemy;
+        component.hitTimes = states[i].hitTimes;
+        component.doubled = states[i].doubled;
+        component.checkingSpeed = states[i].checkingSpeed;
     }
 }

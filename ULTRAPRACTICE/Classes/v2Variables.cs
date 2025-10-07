@@ -20,8 +20,18 @@ public static class v2Variables
 
     public static void SaveVariables()
     {
+        if (states != null)
+        {
+            for (int i = 0; i < states.Length; i++)
+            {
+                Object.Destroy(states[i].backupObject.gameObject);
+            }
+        }
+
+        states = null;
+
         V2[] allObjs = Object.FindObjectsOfType<V2>();
-        states = new properties[allObjs.Length];
+        if (allObjs.Length != 0) states = new properties[allObjs.Length];
 
         for (int i = 0; i < allObjs.Length; i++)
         {
@@ -39,35 +49,24 @@ public static class v2Variables
 
     public static void SetVariables()
     {
-        for (int i = 0; i < states.Length; i++)
+        if (states != null)
         {
-            if (states[i].gameObject != null && states[i].backupObject != null)
+            for (int i = 0; i < states.Length; i++)
             {
-                //we set v2 inactive and active again right after as a hacky way for v2 to not immediately do a stomp after we teleport it mid air
-                states[i].gameObject.gameObject.SetActive(false);
-                states[i].gameObject.gc.onGround = false;
-                states[i].gameObject.gameObject.transform.position = states[i].backupObject.transform.position;
-                states[i].gameObject.gameObject.transform.rotation = states[i].backupObject.transform.rotation;
+                if (states[i].gameObject != null && states[i].backupObject != null)
+                {
+                    //we set v2 inactive and active again right after as a hacky way for v2 to not immediately do a stomp after we teleport it mid air
+                    states[i].gameObject.gameObject.SetActive(false);
+                    states[i].gameObject.gc.onGround = false;
+                    states[i].gameObject.gameObject.transform.position = states[i].backupObject.transform.position;
+                    states[i].gameObject.gameObject.transform.rotation = states[i].backupObject.transform.rotation;
 
-                states[i].gameObject.gameObject.SetActive(true);
-                // also found we might? need a single frame before we do the next part because otherwise weird stuff happens
-                MonoSingleton<UpdateBehaviour>.Instance.StartCoroutine(SetVelocityAfter(i));
+                    states[i].gameObject.gameObject.SetActive(true);
+                }
             }
-        }
-    }
 
-    public static IEnumerator SetVelocityAfter(int i)
-    {
-        yield return new WaitForFixedUpdate();
-        Rigidbody rb = states[i].gameObject.GetComponent<Rigidbody>();
-        rb.isKinematic = false;
-        if (rb != null)
-        {
-            rb.velocity = states[i].vel;
-            rb.isKinematic = states[i].kinematic;
+            // also found we might? need a single frame before we do the next part because otherwise weird stuff happens
+            MonoSingleton<UpdateBehaviour>.Instance.Invoke("SetVelocityAfterV2", 0.01f);
         }
-        states[i].gameObject.gc.CheckColsOnce();
-
-        UpdateBehaviour.CopyScripts(states[i].backupObject, states[i].gameObject.gameObject);
     }
 }

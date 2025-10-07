@@ -19,7 +19,10 @@ namespace ULTRAPRACTICE.Classes
             currentStainCount = OilManager.currentStainCount;
             stainIndices = new Dictionary<Transform, int>(OilManager.stainIndices);
             stainVoxels = new Dictionary<Vector3Int, StainVoxel>(OilManager.stainVoxels);
-            stainTransforms = new TransformAccessArray(10000);
+            if (stainTransforms.isCreated) stainTransforms.Dispose();
+
+            if (!OilManager.stainTransforms.isCreated) return;
+            stainTransforms = new TransformAccessArray(OilManager.stainTransforms.length);
 
             for (int i = 0; i < OilManager.stainTransforms.length; i++)
             {
@@ -31,6 +34,7 @@ namespace ULTRAPRACTICE.Classes
         public static void SetVariables()
         {
             StainVoxelManager OilManager = MonoSingleton<StainVoxelManager>.Instance;
+            if (!OilManager.stainTransforms.isCreated || !stainTransforms.isCreated) return;
             OilManager.stainVoxels.Clear();
             OilManager.stainIndices.Clear();
 

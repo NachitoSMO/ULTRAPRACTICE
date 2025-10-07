@@ -1,13 +1,14 @@
 ﻿using Configgy;
-using TMPro;
+using System;
 using System.Linq;
 using System.Reflection;
+using TMPro;
 using ULTRAPRACTICE.Classes;
 using ULTRAPRACTICE.Patches;
 using UnityEngine;
 namespace ULTRAPRACTICE;
 
-public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
+public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 {
 
     [Configgable]
@@ -97,7 +98,7 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         {
             // TODO: perhaps refactor each method to be non-static and implement IVariableSaver or something
             grenadeVariables.SaveVariables();
-            CoinVariables.SaveVariables();
+            coinVariables.SaveVariables();
             ProjectileVariables.SaveVariables();
             v2Variables.SaveVariables();
             playerVariables.SaveVariables(Plugin.Instance.player);
@@ -121,7 +122,12 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         // we can practice 1-4 properly
 
         if (Plugin.Instance.atCheckpoint && FindObjectOfType<V2>())
-            PseudoResetRoom();
+        {
+            if (v2Variables.states == null)
+            {
+                PseudoResetRoom();
+            }
+        }
 
         // this is technically wrong, it should instead save whatever the slomo attachments
         // hasBeenDone value was when we save but due to the way slomos are used
@@ -141,7 +147,7 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         v2Variables.SetVariables();
         grenadeVariables.SetVariables();
         ProjectileVariables.SetVariables();
-        CoinVariables.SetVariables();
+        coinVariables.SetVariables();
         playerVariables.SetVariables(Plugin.Instance.player);
         WeaponChargeVariables.SetVariables();
         CannonBallVariables.SetVariables();
@@ -160,7 +166,7 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
     public static void CreateSubtitle(string title)
     {
         SubtitleController subController = MonoSingleton<SubtitleController>.Instance;
-        Subtitle subtitle = Object.Instantiate(subController.subtitleLine, subController.container, worldPositionStays: true);
+        Subtitle subtitle = UnityEngine.Object.Instantiate(subController.subtitleLine, subController.container, worldPositionStays: true);
         subtitle.GetComponentInChildren<TMP_Text>().text = title;
         subtitle.fadeInSpeed = subtitle.fadeInSpeed * 7f;
         subtitle.fadeOutSpeed = subtitle.fadeOutSpeed * 7f;
@@ -204,9 +210,92 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         }
     }
 
+    public void SetVelocityAfterPly()
+    {
+        var ply = Plugin.Instance.player;
+        Rigidbody rb = ply.gameObject.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.velocity = playerVariables.savedVel;
+        }
+
+        UpdateBehaviour.CopyValues(ply, playerVariables.savedVars);
+
+        if (ply.jumping)
+        {
+            ply.Invoke(nameof(NewMovement.JumpReady), playerVariables.timeUntilJumpReadyMax - playerVariables.timeUntilJumpReady);
+            ply.Invoke(nameof(NewMovement.NotJumping), playerVariables.timeUntilNotJumpingMax - playerVariables.timeUntilNotJumping);
+        }
+        ply.gc.StopForceOff();
+    }
+
+    public void SetVelocityAfterV2()
+    {
+        var states = v2Variables.states;
+        for (int i = 0; i < states.Length; i++)
+        {
+            if (states[i].gameObject != null && states[i].backupObject != null)
+            {
+                Rigidbody rb = states[i].gameObject.GetComponent<Rigidbody>();
+                rb.isKinematic = false;
+                if (rb != null)
+                {
+                    rb.velocity = states[i].vel;
+                    rb.isKinematic = states[i].kinematic;
+                }
+                states[i].gameObject.gc.CheckColsOnce();
+
+                UpdateBehaviour.CopyScripts(states[i].backupObject, states[i].gameObject.gameObject);
+            }
+        }
+    }
+
+    public void RestoreCoinInvokes()
+    {
+        var states = coinVariables.states;
+        for (int i = 0; i < states.Length; i++)
+        {
+            var component = states[i].gameObject.GetComponentInChildren<Coin>();
+            if (component.checkingSpeed)
+            {
+                Collider[] array = component.GetComponents<Collider>();
+                for (int j = 0; j < array.Length; j++)
+                {
+                    array[j].enabled = true;
+                }
+            }
+            component.CancelInvoke("StartCheckingSpeed");
+            component.CancelInvoke("GetDeleted");
+            component.CancelInvoke("TripleTime");
+            component.CancelInvoke("TripleTimeEnd");
+            component.CancelInvoke("DoubleTime");
+            if (states[i].invokingCheckingSpeed)
+            {
+                component.Invoke("StartCheckingSpeed", 0.1f - states[i].checkSpeedTimerSaved);
+            }
+            if (states[i].invokingTripleTime)
+            {
+                component.Invoke("TripleTime", 0.35f - states[i].deleteTimerSaved);
+            }
+            if (states[i].invokingDoubleTime)
+            {
+                component.Invoke("DoubleTime", 1f - states[i].deleteTimerSaved);
+            }
+            if (states[i].invokingTripleTimeEnd)
+            {
+                component.Invoke("TripleTimeEnd", 0.417f - states[i].deleteTimerSaved);
+            }
+            if (states[i].invokingDeletion)
+            {
+                component.Invoke("GetDeleted", 5f - states[i].deleteTimerSaved);
+            }
+        }
+    }
+
     //uses 2 gameObjects and puts all of their components through CopyValues()
     public static void CopyScripts(GameObject source, GameObject target)
     {
+        if (source == null || target == null) return;
         MonoBehaviour[] components = source.GetComponents<MonoBehaviour>();
         foreach (MonoBehaviour monoBehaviour in components)
         {
@@ -218,26 +307,41 @@ public sealed class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         }
     }
 
-    //the hell function 
     public static void CopyValues(object target, object source)
     {
         if (target == null || source == null)
             return;
 
-        FieldInfo[] fields = source.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        Type type = source.GetType();
+
+        FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
         foreach (FieldInfo field in fields)
         {
-            // we skip rigidbody's as assigning those during runtime doesn't work as we might expect
-            if (typeof(Rigidbody).IsAssignableFrom(field.FieldType))
-                continue;
-
-            FieldInfo targetField = target.GetType().GetField(field.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-            if (targetField != null && targetField.FieldType == field.FieldType)
+            try
             {
+                if (typeof(Rigidbody).IsAssignableFrom(field.FieldType) ||
+                    typeof(Component).IsAssignableFrom(field.FieldType) ||
+                    typeof(GameObject).IsAssignableFrom(field.FieldType))
+                    continue;
+
+                FieldInfo targetField = target.GetType().GetField(field.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (targetField == null)
+                    continue;
+
+                if (targetField.FieldType != field.FieldType)
+                    continue;
+
                 object value = field.GetValue(source);
+
+                if (value is UnityEngine.Object unityObj && unityObj == null)
+                    continue;
+
                 targetField.SetValue(target, value);
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"CopyValues: Failed to copy field '{field.Name}' ({field.FieldType}) - {ex.Message}");
             }
         }
     }
