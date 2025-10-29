@@ -330,7 +330,7 @@ public static class playerVariables
 
         savedVars = new GameObject().AddComponent<NewMovementVars>();
 
-        UpdateBehaviour.CopyValues(savedVars, ply);
+        UpdateBehaviour.CopyScripts(ply.gameObject, savedVars.gameObject);
 
         savedPos = plyObj.transform.position;
         savedVel = rb.velocity;

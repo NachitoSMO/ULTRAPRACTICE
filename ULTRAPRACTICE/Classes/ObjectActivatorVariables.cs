@@ -2,7 +2,6 @@
 using UnityEngine;
 
 namespace ULTRAPRACTICE.Classes;
-
 internal static class ObjectActivatorVariables
 {
     public struct properties

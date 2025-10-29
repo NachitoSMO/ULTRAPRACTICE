@@ -17,6 +17,33 @@ public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
     [Configgable]
     private static ConfigKeybind load = new(KeyCode.F2);
 
+    [Configgable]
+    private static ConfigToggle saveCannonBalls = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle saveCoins = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle saveGrenades = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle saveLoadedRooms = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle saveOil = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle savePlayer = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle saveProjectiles = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle saveV2 = new ConfigToggle(true);
+
+    [Configgable]
+    private static ConfigToggle saveWeaponCharges = new ConfigToggle(true);
+
     private static bool hasSaved = false;
 
     private static float currentTime;
@@ -31,10 +58,11 @@ public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         if (!player)
         {
             if (MonoSingleton<NewMovement>.Instance != null)
+            {
                 Plugin.Instance.player = player = MonoSingleton<NewMovement>.Instance;
+            }
             else
             {
-                ManageInputs();
                 return;
             }
         }
@@ -92,20 +120,18 @@ public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
 
     private void ManageInputs()
     {
-        if (Plugin.Instance.player == null) return;
-
-        if (save.WasPeformed())
+        if (save.WasPeformed() && !Plugin.Instance.player.dead)
         {
             // TODO: perhaps refactor each method to be non-static and implement IVariableSaver or something
-            grenadeVariables.SaveVariables();
-            coinVariables.SaveVariables();
-            ProjectileVariables.SaveVariables();
-            v2Variables.SaveVariables();
-            playerVariables.SaveVariables(Plugin.Instance.player);
-            WeaponChargeVariables.SaveVariables();
-            CannonBallVariables.SaveVariables();
-            LoadedRoomsVariables.SaveVariables();
-            OilVariables.SaveVariables();
+            if (saveGrenades.Value) grenadeVariables.SaveVariables();
+            if (saveCoins.Value) coinVariables.SaveVariables();
+            if (saveProjectiles.Value) ProjectileVariables.SaveVariables();
+            if (saveV2.Value) v2Variables.SaveVariables();
+            if (savePlayer.Value) playerVariables.SaveVariables(Plugin.Instance.player);
+            if (saveWeaponCharges.Value) WeaponChargeVariables.SaveVariables();
+            if (saveCannonBalls.Value) CannonBallVariables.SaveVariables();
+            if (saveLoadedRooms.Value) LoadedRoomsVariables.SaveVariables();
+            if (saveOil.Value) OilVariables.SaveVariables();
             ObjectActivatorVariables.SaveVariables();
 
             if (MonoSingleton<StatsManager>.Instance != null) currentTime = MonoSingleton<StatsManager>.Instance.seconds;
@@ -117,7 +143,7 @@ public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             hasSaved = true;
         }
 
-        if (!hasSaved || !load.WasPeformed()) return;
+        if (!hasSaved || !load.WasPeformed() || Plugin.Instance.player.dead) return;
         // hacky workaround that makes it so if we saved at a point before v2 existed it just resets the room the same way CheckPoints do it so that
         // we can practice 1-4 properly
 
@@ -144,15 +170,15 @@ public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
                 attach.hasBeenDone = false;
         }
 
-        v2Variables.SetVariables();
-        grenadeVariables.SetVariables();
-        ProjectileVariables.SetVariables();
-        coinVariables.SetVariables();
-        playerVariables.SetVariables(Plugin.Instance.player);
-        WeaponChargeVariables.SetVariables();
-        CannonBallVariables.SetVariables();
-        OilVariables.SetVariables();
-        LoadedRoomsVariables.SetVariables();
+        if (saveGrenades.Value) grenadeVariables.SetVariables();
+        if (saveCoins.Value) coinVariables.SetVariables();
+        if (saveProjectiles.Value) ProjectileVariables.SetVariables();
+        if (saveV2.Value) v2Variables.SetVariables();
+        if (savePlayer.Value) playerVariables.SetVariables(Plugin.Instance.player);
+        if (saveWeaponCharges.Value) WeaponChargeVariables.SetVariables();
+        if (saveCannonBalls.Value) CannonBallVariables.SetVariables();
+        if (saveLoadedRooms.Value) LoadedRoomsVariables.SetVariables();
+        if (saveOil.Value) OilVariables.SetVariables();
         ObjectActivatorVariables.SetVariables();
 
         if (MonoSingleton<StatsManager>.Instance != null) MonoSingleton<StatsManager>.Instance.seconds = currentTime;
@@ -219,7 +245,7 @@ public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
             rb.velocity = playerVariables.savedVel;
         }
 
-        UpdateBehaviour.CopyValues(ply, playerVariables.savedVars);
+        UpdateBehaviour.CopyScripts(playerVariables.savedVars.gameObject, ply.gameObject);
 
         if (ply.jumping)
         {
@@ -292,56 +318,33 @@ public class UpdateBehaviour : MonoSingleton<UpdateBehaviour>
         }
     }
 
-    //uses 2 gameObjects and puts all of their components through CopyValues()
     public static void CopyScripts(GameObject source, GameObject target)
     {
-        if (source == null || target == null) return;
-        MonoBehaviour[] components = source.GetComponents<MonoBehaviour>();
-        foreach (MonoBehaviour monoBehaviour in components)
+        Component[] components = source.GetComponents<Component>();
+        Component[] tComponents = target.GetComponents<Component>();
+
+        foreach (Component component in components)
         {
-            UnityEngine.Component component = target.GetComponent(monoBehaviour.GetType());
-            if (component != null)
+            Type compType = component.GetType();
+
+            FieldInfo[] fields = compType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            foreach (Component tComponent in tComponents)
             {
-                CopyValues(component, monoBehaviour);
-            }
-        }
-    }
+                Type tCompType = tComponent.GetType();
 
-    public static void CopyValues(object target, object source)
-    {
-        if (target == null || source == null)
-            return;
+                FieldInfo[] tFields = tCompType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-        Type type = source.GetType();
-
-        FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-        foreach (FieldInfo field in fields)
-        {
-            try
-            {
-                if (typeof(Rigidbody).IsAssignableFrom(field.FieldType) ||
-                    typeof(Component).IsAssignableFrom(field.FieldType) ||
-                    typeof(GameObject).IsAssignableFrom(field.FieldType))
-                    continue;
-
-                FieldInfo targetField = target.GetType().GetField(field.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (targetField == null)
-                    continue;
-
-                if (targetField.FieldType != field.FieldType)
-                    continue;
-
-                object value = field.GetValue(source);
-
-                if (value is UnityEngine.Object unityObj && unityObj == null)
-                    continue;
-
-                targetField.SetValue(target, value);
-            }
-            catch (Exception ex)
-            {
-                Plugin.Logger.LogError($"CopyValues: Failed to copy field '{field.Name}' ({field.FieldType}) - {ex.Message}");
+                foreach (FieldInfo tField in tFields)
+                {
+                    foreach (FieldInfo field in fields)
+                    {
+                        if (field.Name == tField.Name && field.FieldType == tField.FieldType)
+                        {
+                            tField.SetValue(tComponent, field.GetValue(component));
+                        }
+                    }
+                }
             }
         }
     }
